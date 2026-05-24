@@ -1,0 +1,2698 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chronicle Architect</title>
+    <style>
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+
+        :root {
+            /* Surfaces */
+            --bg-surface: #000000;
+            --bg-elevated: #0A0E14;
+            --bg-input: #141A20;
+            --bg-hover: #1A2128;
+
+            /* Text */
+            --text-primary: #E6F1FF;
+            --text-secondary: #8899AA;
+            --text-muted: #556677;
+
+            /* Borders */
+            --border-light: #1E2A36;
+            --border-medium: #2A3A48;
+
+            /* Accent (Cyan) */
+            --accent-primary: #00BFAE;
+            --accent-primary-hover: #00D4C0;
+            --accent-primary-soft: rgba(0, 191, 174, 0.15);
+
+            /* Semantic States */
+            --success: #66BB6A;
+            --warning: #FFA726;
+            --error: #EF5350;
+            --info: #4FC3F7;
+        }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            background: var(--bg-surface);
+            color: var(--text-primary);
+            font-family: system-ui, -apple-system, sans-serif;
+            line-height: 1.5;
+        }
+
+        #app {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ---------- Auth Pages (register / login) ---------- */
+        .auth-page {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex: 1;
+            padding: 24px;
+        }
+
+        .auth-card {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-light);
+            border-radius: 8px;
+            padding: 32px;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .auth-title {
+            margin: 0 0 4px 0;
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .auth-subtitle {
+            margin: 0 0 24px 0;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .auth-form {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-group label {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .form-group input {
+            background: var(--bg-input);
+            border: 1px solid var(--border-medium);
+            border-radius: 6px;
+            padding: 12px;
+            color: var(--text-primary);
+            font-size: 15px;
+            font-family: inherit;
+            outline: none;
+            transition: border-color 0.15s;
+        }
+
+        .form-group input:focus {
+            border-color: var(--accent-primary);
+        }
+
+        .auth-hint {
+            margin: 12px 0 0 0;
+            font-size: 12px;
+            color: var(--text-muted);
+            line-height: 1.6;
+        }
+
+        .auth-hint code {
+            font-family: monospace;
+            background: var(--bg-hover);
+            padding: 1px 5px;
+            border-radius: 3px;
+            font-size: 12px;
+        }
+
+        .auth-error {
+            color: var(--error);
+            font-size: 13px;
+            margin: 0 0 8px 0;
+            min-height: 0;
+        }
+
+        .auth-link {
+            margin-top: 16px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            text-align: center;
+        }
+
+        .auth-link a {
+            color: var(--accent-primary);
+            text-decoration: none;
+        }
+
+        .auth-link a:hover {
+            text-decoration: underline;
+        }
+
+        /* ---------- Buttons ---------- */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 15px;
+            font-family: inherit;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.15s, border-color 0.15s;
+            border: none;
+            outline: none;
+        }
+
+        .btn-primary {
+            background: var(--accent-primary);
+            color: var(--bg-surface);
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-primary-hover);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            border: 1px solid var(--accent-primary);
+            color: var(--accent-primary);
+        }
+
+        .btn-secondary:hover {
+            background: var(--accent-primary-soft);
+        }
+
+        .btn-danger {
+            background: transparent;
+            border: 1px solid var(--error);
+            color: var(--error);
+        }
+
+        .btn-danger:hover {
+            background: rgba(239, 83, 80, 0.15);
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 13px;
+            border-radius: 4px;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* ---------- Project List Page ---------- */
+        .projects-page {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            padding-bottom: 28px;
+        }
+
+        .topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--border-light);
+            background: var(--bg-elevated);
+        }
+
+        .topbar h1 {
+            margin: 0;
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .topbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .projects-content {
+            flex: 1;
+            padding: 24px;
+            max-width: 800px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        .projects-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .projects-header h2 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .project-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .project-card {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-light);
+            border-radius: 8px;
+            padding: 20px 24px;
+            cursor: pointer;
+            transition: border-color 0.15s, background 0.15s;
+            position: relative;
+        }
+
+        .project-card:hover {
+            border-color: var(--accent-primary);
+            background: var(--bg-hover);
+        }
+
+        .project-card h3 {
+            margin: 0 0 6px 0;
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .project-card p {
+            margin: 0;
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        .project-card .project-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 8px;
+        }
+
+        .project-card .project-delete-btn {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 16px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            line-height: 1;
+            z-index: 2;
+        }
+
+        .project-card .project-delete-btn:hover {
+            color: var(--error);
+            background: rgba(239, 83, 80, 0.15);
+        }
+
+        .empty-projects {
+            text-align: center;
+            padding: 48px 24px;
+            color: var(--text-muted);
+            font-size: 15px;
+        }
+
+        /* ---------- Modal ---------- */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-light);
+            border-radius: 8px;
+            padding: 28px;
+            width: 100%;
+            max-width: 440px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-wide {
+            max-width: 560px;
+        }
+
+        .modal h2 {
+            margin: 0 0 20px 0;
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .modal h3 {
+            margin: 0 0 8px 0;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .modal .form-group {
+            margin-bottom: 16px;
+        }
+
+        .modal .form-group label {
+            font-size: 14px;
+            color: var(--text-secondary);
+            display: block;
+            margin-bottom: 6px;
+        }
+
+        .modal .form-group input,
+        .modal .form-group textarea,
+        .modal .form-group select {
+            width: 100%;
+            background: var(--bg-input);
+            border: 1px solid var(--border-medium);
+            border-radius: 6px;
+            padding: 12px;
+            color: var(--text-primary);
+            font-size: 14px;
+            font-family: inherit;
+            outline: none;
+            resize: vertical;
+        }
+
+        .modal .form-group input:focus,
+        .modal .form-group textarea:focus,
+        .modal .form-group select:focus {
+            border-color: var(--accent-primary);
+        }
+
+        .modal .form-group textarea {
+            min-height: 80px;
+        }
+
+        .modal .form-group select {
+            cursor: pointer;
+        }
+
+        .modal .form-group select option {
+            background: var(--bg-elevated);
+            color: var(--text-primary);
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 8px;
+        }
+
+        .modal-error {
+            color: var(--error);
+            font-size: 13px;
+            margin-bottom: 12px;
+        }
+
+        .modal-detail {
+            color: var(--text-secondary);
+            font-size: 13px;
+            line-height: 1.6;
+            margin: 0 0 4px 0;
+        }
+
+        .modal-detail strong {
+            color: var(--text-primary);
+        }
+
+        .modal-content-block {
+            background: var(--bg-input);
+            border: 1px solid var(--border-light);
+            border-radius: 6px;
+            padding: 14px;
+            margin-top: 12px;
+            color: var(--text-primary);
+            font-size: 14px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        /* ---------- Editor Page ---------- */
+        .editor-page {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            padding-bottom: 28px;
+        }
+
+        .editor-topbar {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 12px 20px;
+            border-bottom: 1px solid var(--border-light);
+            background: var(--bg-elevated);
+            flex-shrink: 0;
+        }
+
+        .editor-topbar .back-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 20px;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-family: inherit;
+            display: flex;
+            align-items: center;
+        }
+
+        .editor-topbar .back-btn:hover {
+            color: var(--text-primary);
+            background: var(--bg-hover);
+        }
+
+        .editor-topbar .project-title {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .editor-topbar .save-indicator {
+            font-size: 13px;
+            font-weight: 500;
+            min-width: 80px;
+            text-align: right;
+        }
+
+        .editor-topbar .save-indicator.state-typing {
+            color: var(--warning);
+        }
+
+        .editor-topbar .save-indicator.state-waiting {
+            color: var(--warning);
+        }
+
+        .editor-topbar .save-indicator.state-saving {
+            color: var(--warning);
+        }
+
+        .editor-topbar .save-indicator.state-saved {
+            color: var(--success);
+        }
+
+        .editor-topbar .save-indicator.state-error {
+            color: var(--error);
+        }
+
+        .editor-topbar .word-count {
+            font-size: 13px;
+            color: var(--text-muted);
+            white-space: nowrap;
+        }
+
+        /* ---------- Editor Layout (sidebar + main) ---------- */
+        .editor-layout {
+            flex: 1;
+            display: flex;
+            min-height: 0;
+        }
+
+        /* ---------- Sidebar ---------- */
+        .sidebar {
+            width: 250px;
+            flex-shrink: 0;
+            background: var(--bg-elevated);
+            border-right: 1px solid var(--border-light);
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        .sidebar.collapsed {
+            width: 40px;
+        }
+
+        .sidebar-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 18px;
+            cursor: pointer;
+            padding: 8px;
+            flex-shrink: 0;
+            font-family: inherit;
+            min-height: 36px;
+        }
+
+        .sidebar-toggle:hover {
+            color: var(--text-primary);
+            background: var(--bg-hover);
+        }
+
+        .sidebar-inner {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 0;
+            overflow-y: auto;
+        }
+
+        .sidebar.collapsed .sidebar-inner {
+            display: none;
+        }
+
+        .sidebar-project-title {
+            padding: 12px 16px 8px;
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--text-primary);
+            border-bottom: 1px solid var(--border-light);
+            margin: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .sidebar-section-header {
+            padding: 12px 16px 6px;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .chapter-list {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .chapter-item {
+            padding: 6px 8px 6px 20px;
+            font-size: 14px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            border-left: 3px solid transparent;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .chapter-item:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+
+        .chapter-item.active {
+            background: var(--accent-primary-soft);
+            color: var(--text-primary);
+            border-left-color: var(--accent-primary);
+        }
+
+        .chapter-item .chapter-title-text {
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            min-width: 0;
+        }
+
+        .chapter-item .chapter-icon-btn {
+            display: none;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 14px;
+            padding: 2px 5px;
+            border-radius: 3px;
+            line-height: 1;
+            flex-shrink: 0;
+        }
+
+        .chapter-item:hover .chapter-icon-btn {
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .chapter-item .chapter-icon-btn:hover {
+            color: var(--accent-primary);
+            background: var(--bg-hover);
+        }
+
+        .chapter-item .chapter-icon-btn.delete-btn:hover {
+            color: var(--error);
+        }
+
+        .chapter-item .chapter-edit-input {
+            width: 100%;
+            background: var(--bg-input);
+            border: 1px solid var(--accent-primary);
+            border-radius: 4px;
+            color: var(--text-primary);
+            font-size: 14px;
+            font-family: inherit;
+            padding: 2px 6px;
+            outline: none;
+        }
+
+        .sidebar-actions {
+            padding: 12px 16px;
+            border-top: 1px solid var(--border-light);
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .sidebar-link {
+            display: block;
+            padding: 6px 0;
+            font-size: 13px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .sidebar-link:hover {
+            color: var(--accent-primary);
+        }
+
+        /* ---------- Editor Main Area ---------- */
+        .editor-main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+
+        .editor-textarea-wrapper {
+            flex: 1;
+            display: flex;
+            min-height: 0;
+        }
+
+        .editor-textarea-wrapper textarea {
+            flex: 1;
+            width: 100%;
+            background: var(--bg-input);
+            border: none;
+            border-right: 1px solid var(--border-medium);
+            color: var(--text-primary);
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 15px;
+            line-height: 1.7;
+            padding: 20px 24px;
+            resize: none;
+            outline: none;
+        }
+
+        /* ---------- Wiki References Panel ---------- */
+        .wiki-refs-panel {
+            border-top: 1px solid var(--border-light);
+            background: var(--bg-elevated);
+            padding: 8px 16px;
+            font-size: 13px;
+            flex-shrink: 0;
+            max-height: 120px;
+            overflow-y: auto;
+        }
+
+        .wiki-refs-panel.hidden {
+            display: none;
+        }
+
+        .wiki-refs-header {
+            color: var(--text-muted);
+            font-size: 12px;
+            font-weight: 600;
+            margin: 0 0 4px 0;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .wiki-refs-header:hover {
+            color: var(--text-secondary);
+        }
+
+        .wiki-refs-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .wiki-ref-item {
+            display: inline-block;
+            background: var(--accent-primary-soft);
+            color: var(--accent-primary);
+            padding: 2px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .wiki-ref-item:hover {
+            background: rgba(0, 191, 174, 0.25);
+        }
+
+        /* ---------- Error States ---------- */
+        .editor-error {
+            padding: 40px 24px;
+            text-align: center;
+            color: var(--error);
+            font-size: 16px;
+        }
+
+        .editor-error p {
+            margin: 0 0 16px 0;
+        }
+
+        .editor-loading {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        /* ---------- Error Banner ---------- */
+        .error-banner {
+            background: rgba(239, 83, 80, 0.12);
+            border: 1px solid var(--error);
+            color: var(--error);
+            padding: 10px 16px;
+            border-radius: 6px;
+            font-size: 13px;
+            margin-bottom: 12px;
+        }
+
+        /* ---------- Status Bar ---------- */
+        #status-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 28px;
+            background: var(--bg-elevated);
+            border-top: 1px solid var(--border-light);
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            font-size: 12px;
+            color: var(--text-muted);
+            gap: 8px;
+            z-index: 900;
+            user-select: none;
+        }
+
+        #status-bar.hidden {
+            display: none;
+        }
+
+        .status-bar-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .status-bar-dot.connected {
+            background: var(--success);
+        }
+
+        .status-bar-dot.disconnected {
+            background: var(--error);
+        }
+
+        .status-bar-sep {
+            color: var(--text-muted);
+        }
+
+        .status-bar-error {
+            color: var(--warning);
+            cursor: help;
+        }
+
+        /* ---------- Wiki Page ---------- */
+        .wiki-page {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            padding-bottom: 28px;
+        }
+
+        .wiki-topbar {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--border-light);
+            background: var(--bg-elevated);
+        }
+
+        .wiki-topbar .back-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 20px;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-family: inherit;
+            display: flex;
+            align-items: center;
+        }
+
+        .wiki-topbar .back-btn:hover {
+            color: var(--text-primary);
+            background: var(--bg-hover);
+        }
+
+        .wiki-topbar h1 {
+            margin: 0;
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .wiki-topbar .project-title-sm {
+            margin: 0;
+            font-size: 14px;
+            color: var(--text-secondary);
+            flex: 1;
+        }
+
+        .wiki-content {
+            flex: 1;
+            padding: 24px;
+            max-width: 900px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        .wiki-content h2 {
+            margin: 0 0 16px 0;
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .wiki-section {
+            margin-bottom: 32px;
+        }
+
+        .wiki-category {
+            margin-bottom: 16px;
+            border: 1px solid var(--border-light);
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .wiki-category-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            background: var(--bg-elevated);
+            cursor: pointer;
+            user-select: none;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .wiki-category-header:hover {
+            background: var(--bg-hover);
+        }
+
+        .wiki-category-arrow {
+            font-size: 12px;
+            color: var(--text-muted);
+            transition: transform 0.15s;
+            display: inline-block;
+        }
+
+        .wiki-category.collapsed .wiki-category-arrow {
+            transform: rotate(-90deg);
+        }
+
+        .wiki-category.collapsed .wiki-category-body {
+            display: none;
+        }
+
+        .wiki-category-body {
+            padding: 8px 0;
+        }
+
+        .wiki-entry-item {
+            padding: 8px 16px 8px 32px;
+            font-size: 14px;
+            color: var(--text-secondary);
+            cursor: pointer;
+        }
+
+        .wiki-entry-item:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+
+        .wiki-empty {
+            color: var(--text-muted);
+            font-size: 14px;
+            padding: 16px 0;
+        }
+
+        .wiki-form {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-light);
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .wiki-form h3 {
+            margin: 0 0 16px 0;
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        /* ---------- Responsive ---------- */
+        @media (max-width: 640px) {
+            .auth-card {
+                padding: 24px 20px;
+            }
+
+            .projects-content {
+                padding: 16px;
+            }
+
+            .topbar {
+                padding: 12px 16px;
+            }
+
+            .editor-topbar {
+                padding: 10px 12px;
+                gap: 10px;
+                flex-wrap: wrap;
+            }
+
+            .editor-textarea-wrapper textarea {
+                padding: 14px 16px;
+            }
+
+            .sidebar {
+                width: 200px;
+            }
+
+            .sidebar.collapsed {
+                width: 36px;
+            }
+
+            .wiki-content {
+                padding: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="app"></div>
+    <script>
+        (function() {
+            'use strict';
+
+            // ─── State ───────────────────────────────────────────────
+            let currentCleanup = null;
+            let statusBarEl = null;
+            let statusBarHealthInterval = null;
+            let lastSaveTime = null;
+            let lastErrorMsg = '';
+            let lastErrorTime = 0;
+            let appVersion = '';
+            let wikiEntriesCache = {};       // { projectId: [entry, ...] }
+
+            // ─── Helpers ─────────────────────────────────────────────
+            const $ = (sel) => document.querySelector(sel);
+            const $$ = (sel) => document.querySelectorAll(sel);
+            const el = (tag, attrs = {}, ...children) => {
+                attrs = attrs || {};
+                const elem = document.createElement(tag);
+                for (const [k, v] of Object.entries(attrs)) {
+                    if (k === 'className') {
+                        elem.className = v;
+                    } else if (k === 'style' && typeof v === 'object') {
+                        Object.assign(elem.style, v);
+                    } else if (k.startsWith('on') && typeof v === 'function') {
+                        elem.addEventListener(k.slice(2).toLowerCase(), v);
+                    } else if (k === 'innerHTML') {
+                        elem.innerHTML = v;
+                    } else if (k === 'htmlFor') {
+                        elem.setAttribute('for', v);
+                    } else {
+                        elem.setAttribute(k, v);
+                    }
+                }
+                for (const child of children) {
+                    if (child != null) {
+                        elem.appendChild(typeof child === 'string' ? document.createTextNode(child) : child);
+                    }
+                }
+                return elem;
+            };
+
+            function getToken() {
+                return localStorage.getItem('token');
+            }
+
+            function setToken(token) {
+                localStorage.setItem('token', token);
+            }
+
+            function clearToken() {
+                localStorage.removeItem('token');
+            }
+
+            function apiHeaders() {
+                const headers = { 'Content-Type': 'application/json' };
+                const token = getToken();
+                if (token) {
+                    headers['Authorization'] = 'Bearer ' + token;
+                }
+                return headers;
+            }
+
+            async function apiGet(path) {
+                const res = await fetch(path, { headers: apiHeaders() });
+                if (!res.ok) {
+                    let detail = res.statusText;
+                    try {
+                        const err = await res.json();
+                        if (err.detail) detail = err.detail;
+                    } catch (_) {}
+                    throw new Error(detail);
+                }
+                return res.json();
+            }
+
+            async function apiPost(path, body) {
+                const res = await fetch(path, {
+                    method: 'POST',
+                    headers: apiHeaders(),
+                    body: JSON.stringify(body),
+                });
+                if (!res.ok) {
+                    let detail = res.statusText;
+                    try {
+                        const err = await res.json();
+                        if (err.detail) detail = err.detail;
+                    } catch (_) {}
+                    throw new Error(detail);
+                }
+                return res.json();
+            }
+
+            async function apiPut(path, body) {
+                const res = await fetch(path, {
+                    method: 'PUT',
+                    headers: apiHeaders(),
+                    body: JSON.stringify(body),
+                });
+                if (!res.ok) {
+                    let detail = res.statusText;
+                    try {
+                        const err = await res.json();
+                        if (err.detail) detail = err.detail;
+                    } catch (_) {}
+                    throw new Error(detail);
+                }
+                return res.json();
+            }
+
+            async function apiDelete(path) {
+                const res = await fetch(path, { method: 'DELETE', headers: apiHeaders() });
+                if (!res.ok) {
+                    let detail = res.statusText;
+                    try { const err = await res.json(); if (err.detail) detail = err.detail; } catch (_) {}
+                    throw new Error(detail);
+                }
+            }
+
+            // ─── Status Bar ──────────────────────────────────────────
+            function initStatusBar() {
+                if (statusBarEl) return;
+                statusBarEl = el('div', { id: 'status-bar', className: 'hidden' });
+                document.body.appendChild(statusBarEl);
+            }
+
+            function showStatusBar() {
+                initStatusBar();
+                statusBarEl.classList.remove('hidden');
+                startHealthCheck();
+            }
+
+            function hideStatusBar() {
+                stopHealthCheck();
+                if (statusBarEl) {
+                    statusBarEl.classList.add('hidden');
+                }
+            }
+
+            function updateStatusBar(opts) {
+                if (!statusBarEl || statusBarEl.classList.contains('hidden')) return;
+                const { connected, lastSave, errorMsg } = opts;
+
+                // Connection dot
+                const dot = statusBarEl.querySelector('.status-bar-dot');
+                const connText = statusBarEl.querySelector('.status-bar-conn-text');
+                if (dot && connText) {
+                    if (typeof connected === 'boolean') {
+                        dot.className = 'status-bar-dot ' + (connected ? 'connected' : 'disconnected');
+                        connText.textContent = connected ? 'Connected' : 'Disconnected';
+                    }
+                }
+
+                // Last save
+                const saveEl = statusBarEl.querySelector('.status-bar-save');
+                if (saveEl && typeof lastSave === 'number') {
+                    saveEl.textContent = 'Last save: ' + formatRelativeTime(Date.now() - lastSave);
+                }
+
+                // Error indicator
+                const errEl = statusBarEl.querySelector('.status-bar-error');
+                if (errEl) {
+                    const hasRecentError = lastErrorMsg && (Date.now() - lastErrorTime) < 30000;
+                    if (hasRecentError) {
+                        errEl.style.display = '';
+                        errEl.setAttribute('title', lastErrorMsg);
+                    } else {
+                        errEl.style.display = 'none';
+                        errEl.removeAttribute('title');
+                    }
+                }
+            }
+
+            function recordApiError(msg) {
+                lastErrorMsg = msg;
+                lastErrorTime = Date.now();
+                updateStatusBar({ errorMsg: msg });
+            }
+
+            function formatRelativeTime(ms) {
+                if (ms < 3000) return 'just now';
+                const sec = Math.floor(ms / 1000);
+                if (sec < 60) return sec + 's ago';
+                const min = Math.floor(sec / 60);
+                if (min < 60) return min + 'm ago';
+                return Math.floor(min / 60) + 'h ago';
+            }
+
+            function startHealthCheck() {
+                stopHealthCheck();
+                checkHealth();
+                statusBarHealthInterval = setInterval(checkHealth, 10000);
+            }
+
+            function stopHealthCheck() {
+                if (statusBarHealthInterval) {
+                    clearInterval(statusBarHealthInterval);
+                    statusBarHealthInterval = null;
+                }
+            }
+
+            async function checkHealth() {
+                let connected = false;
+                try {
+                    const res = await fetch('/api/health', { headers: apiHeaders() });
+                    if (res.ok) connected = true;
+                } catch (_) {}
+                updateStatusBar({ connected: connected });
+            }
+
+            async function loadAppVersion() {
+                if (appVersion) return appVersion;
+                try {
+                    const data = await fetch('/version.json').then(r => r.json());
+                    appVersion = data.version || '';
+                } catch (_) {
+                    appVersion = '';
+                }
+                return appVersion;
+            }
+
+            function renderStatusBarContent() {
+                if (!statusBarEl) return;
+                statusBarEl.innerHTML = '';
+
+                // Connection indicator
+                const dot = el('span', { className: 'status-bar-dot disconnected' });
+                const connText = el('span', { className: 'status-bar-conn-text' }, '...');
+                statusBarEl.appendChild(dot);
+                statusBarEl.appendChild(connText);
+
+                // Separator
+                statusBarEl.appendChild(el('span', { className: 'status-bar-sep' }, ' | '));
+
+                // Last save
+                const saveEl = el('span', { className: 'status-bar-save' }, 'Last save: \u2014');
+                statusBarEl.appendChild(saveEl);
+
+                // Separator
+                statusBarEl.appendChild(el('span', { className: 'status-bar-sep' }, ' | '));
+
+                // Version
+                const verEl = el('span', { className: 'status-bar-version' }, appVersion ? 'v' + appVersion : '...');
+                statusBarEl.appendChild(verEl);
+
+                // Error indicator
+                const errEl = el('span', { className: 'status-bar-error', style: { display: 'none' }, title: '' }, '\u26A0');
+                statusBarEl.appendChild(errEl);
+            }
+
+            // ─── Token Counter (server-side via API) ────────────────
+            function countWords(text) {
+                const trimmed = (text || '').trim();
+                if (!trimmed) return 0;
+                return trimmed.split(/\s+/).length;
+            }
+
+            let _tokenCache = new Map(); // debounce token fetches
+
+            async function fetchTokenCount(text) {
+                const key = text.slice(0, 200); // rough cache key
+                if (_tokenCache.has(key)) return _tokenCache.get(key);
+                try {
+                    const data = await apiPost('/api/tokenize', { text: text });
+                    const count = data.tokens;
+                    // Keep cache small
+                    if (_tokenCache.size > 50) _tokenCache.clear();
+                    _tokenCache.set(key, count);
+                    return count;
+                } catch (_) {
+                    // Fallback: approximate as words * 1.3
+                    return Math.round(countWords(text) * 1.3);
+                }
+            }
+
+            // ─── Wiki Cache ──────────────────────────────────────────
+            async function loadWikiCache(projectId) {
+                if (!wikiEntriesCache[projectId]) {
+                    try {
+                        wikiEntriesCache[projectId] = await apiGet('/api/projects/' + projectId + '/wiki');
+                    } catch (e) {
+                        wikiEntriesCache[projectId] = [];
+                    }
+                }
+                return wikiEntriesCache[projectId];
+            }
+
+            function clearWikiCache(projectId) {
+                delete wikiEntriesCache[projectId];
+            }
+
+            function scanWikiRefs(projectId, text) {
+                const entries = wikiEntriesCache[projectId];
+                if (!entries || entries.length === 0) return [];
+                const sorted = [...entries].sort((a, b) => b.name.length - a.name.length);
+                const found = [];
+                const lowerText = text.toLowerCase();
+                for (const entry of sorted) {
+                    if (entry.name && entry.name.length > 0 && lowerText.includes(entry.name.toLowerCase())) {
+                        // Avoid duplicates
+                        if (!found.some(f => f.id === entry.id)) {
+                            found.push(entry);
+                        }
+                    }
+                }
+                return found;
+            }
+
+            // ─── Router ──────────────────────────────────────────────
+            async function router() {
+                if (currentCleanup) {
+                    currentCleanup();
+                    currentCleanup = null;
+                }
+
+                let setupRequired;
+                try {
+                    const data = await apiGet('/api/check_setup');
+                    setupRequired = data.setup_required;
+                } catch (e) {
+                    hideStatusBar();
+                    renderApp(
+                        el('div', { className: 'auth-page' },
+                            el('div', { className: 'auth-card' },
+                                el('div', { className: 'error-banner' }, 'Connection error: unable to reach server.'),
+                                el('p', { style: { color: 'var(--text-secondary)', fontSize: '14px' } }, 'Please ensure the server is running and refresh the page.'),
+                            )
+                        )
+                    );
+                    return;
+                }
+
+                if (setupRequired) {
+                    hideStatusBar();
+                    window.location.hash = '#/register';
+                    renderRegisterPage();
+                    return;
+                }
+
+                const token = getToken();
+                if (!token) {
+                    hideStatusBar();
+                    window.location.hash = '#/login';
+                    renderLoginPage();
+                    return;
+                }
+
+                // Load app version for status bar
+                loadAppVersion();
+
+                const hash = window.location.hash || '#/projects';
+
+                if (hash === '#/register' || hash === '#/login') {
+                    window.location.hash = '#/projects';
+                    renderProjectsPage();
+                    return;
+                }
+
+                if (hash.startsWith('#/editor/')) {
+                    const parts = hash.split('/');
+                    const projectId = parts[2];
+                    const chapterId = parts[3];
+                    if (!projectId) {
+                        window.location.hash = '#/projects';
+                        renderProjectsPage();
+                        return;
+                    }
+                    renderEditorPage(projectId, chapterId || null);
+                    return;
+                }
+
+                if (hash.startsWith('#/wiki/')) {
+                    const parts = hash.split('/');
+                    const projectId = parts[2];
+                    if (!projectId) {
+                        window.location.hash = '#/projects';
+                        renderProjectsPage();
+                        return;
+                    }
+                    renderWikiPage(projectId);
+                    return;
+                }
+
+                // Default: projects
+                window.location.hash = '#/projects';
+                renderProjectsPage();
+            }
+
+            // ─── Render helpers ──────────────────────────────────────
+            function renderApp(content) {
+                const app = document.getElementById('app');
+                app.innerHTML = '';
+                app.appendChild(content);
+            }
+
+            // ─── Register Page ───────────────────────────────────────
+            function renderRegisterPage() {
+                let errorText = '';
+
+                function onRegister(e) {
+                    e.preventDefault();
+                    const form = e.currentTarget;
+                    const username = form.username.value.trim();
+                    const password = form.password.value;
+
+                    if (!username || !password) {
+                        errorText = 'Username and password are required.';
+                        render();
+                        return;
+                    }
+
+                    apiPost('/api/register', { username, password })
+                        .then(data => {
+                            setToken(data.token);
+                            window.location.hash = '#/projects';
+                            router();
+                        })
+                        .catch(err => {
+                            errorText = err.message;
+                            render();
+                        });
+                }
+
+                function render() {
+                    const page = el('div', { className: 'auth-page' },
+                        el('div', { className: 'auth-card' },
+                            el('h1', { className: 'auth-title' }, 'Chronicle Architect'),
+                            el('p', { className: 'auth-subtitle' }, 'Create your account'),
+                            errorText ? el('p', { className: 'auth-error' }, errorText) : null,
+                            el('form', { className: 'auth-form', onsubmit: onRegister },
+                                el('div', { className: 'form-group' },
+                                    el('label', { htmlFor: 'reg-username' }, 'Username'),
+                                    el('input', { id: 'reg-username', name: 'username', type: 'text', autocomplete: 'username' }),
+                                ),
+                                el('div', { className: 'form-group' },
+                                    el('label', { htmlFor: 'reg-password' }, 'Password'),
+                                    el('input', { id: 'reg-password', name: 'password', type: 'password', autocomplete: 'new-password' }),
+                                ),
+                                el('button', { type: 'submit', className: 'btn btn-primary' }, 'Register & Login'),
+                            ),
+                            el('p', { className: 'auth-hint' },
+                                'Passwords of any length are fully supported. (We securely pre-hash your input, so feel free to use long passphrases or generated strings.) Store them safely in your password manager. If forgotten, you can reset the password from the server\'s command line: ',
+                                el('code', null, 'python cli.py reset_password'),
+                                ' (see README).'
+                            ),
+                            el('p', { className: 'auth-link' },
+                                'Already have an account? ',
+                                el('a', { href: '#/login' }, 'Log in'),
+                            ),
+                        )
+                    );
+                    renderApp(page);
+                }
+
+                render();
+            }
+
+            // ─── Login Page ──────────────────────────────────────────
+            function renderLoginPage() {
+                let errorText = '';
+
+                function onLogin(e) {
+                    e.preventDefault();
+                    const form = e.currentTarget;
+                    const username = form.username.value.trim();
+                    const password = form.password.value;
+
+                    if (!username || !password) {
+                        errorText = 'Username and password are required.';
+                        render();
+                        return;
+                    }
+
+                    apiPost('/api/login', { username, password })
+                        .then(data => {
+                            setToken(data.token);
+                            window.location.hash = '#/projects';
+                            router();
+                        })
+                        .catch(err => {
+                            errorText = err.message;
+                            render();
+                        });
+                }
+
+                function render() {
+                    const page = el('div', { className: 'auth-page' },
+                        el('div', { className: 'auth-card' },
+                            el('h1', { className: 'auth-title' }, 'Chronicle Architect'),
+                            el('p', { className: 'auth-subtitle' }, 'Welcome back'),
+                            errorText ? el('p', { className: 'auth-error' }, errorText) : null,
+                            el('form', { className: 'auth-form', onsubmit: onLogin },
+                                el('div', { className: 'form-group' },
+                                    el('label', { htmlFor: 'login-username' }, 'Username'),
+                                    el('input', { id: 'login-username', name: 'username', type: 'text', autocomplete: 'username' }),
+                                ),
+                                el('div', { className: 'form-group' },
+                                    el('label', { htmlFor: 'login-password' }, 'Password'),
+                                    el('input', { id: 'login-password', name: 'password', type: 'password', autocomplete: 'current-password' }),
+                                ),
+                                el('button', { type: 'submit', className: 'btn btn-primary' }, 'Log in'),
+                            ),
+                            el('p', { className: 'auth-link' },
+                                "Don't have an account? ",
+                                el('a', { href: '#/register' }, 'Register'),
+                            ),
+                        )
+                    );
+                    renderApp(page);
+                }
+
+                render();
+            }
+
+            // ─── Projects Page ───────────────────────────────────────
+            function renderProjectsPage() {
+                showStatusBar();
+                renderStatusBarContent();
+                updateStatusBar({ lastSave: null });
+                checkHealth();
+
+                let projects = [];
+                let loading = true;
+                let loadError = '';
+                let showCreateModal = false;
+                let modalError = '';
+                let modalTitleValue = '';
+                let modalDescValue = '';
+
+                function loadProjects() {
+                    loading = true;
+                    loadError = '';
+                    render();
+
+                    apiGet('/api/projects')
+                        .then(data => {
+                            projects = data;
+                            loading = false;
+                            render();
+                        })
+                        .catch(err => {
+                            loading = false;
+                            loadError = err.message;
+                            recordApiError(err.message);
+                            render();
+                        });
+                }
+
+                function handleLogout() {
+                    clearToken();
+                    hideStatusBar();
+                    window.location.hash = '#/login';
+                    router();
+                }
+
+                function handleCreateProject(title, description) {
+                    modalError = '';
+                    apiPost('/api/projects', { title, description })
+                        .then(project => {
+                            showCreateModal = false;
+                            modalTitleValue = '';
+                            modalDescValue = '';
+                            render();
+                            loadProjects();
+                        })
+                        .catch(err => {
+                            modalError = err.message;
+                            recordApiError(err.message);
+                            render();
+                        });
+                }
+
+                async function handleDeleteProject(projectId, projectTitle) {
+                    const msg = 'Delete "' + (projectTitle || 'Untitled') + '" and all its chapters and wiki entries? This cannot be undone.';
+                    if (!confirm(msg)) return;
+                    try {
+                        await apiDelete('/api/projects/' + projectId);
+                        loadProjects();
+                    } catch (err) {
+                        alert('Failed to delete project: ' + err.message);
+                        recordApiError(err.message);
+                    }
+                }
+
+                function renderCreateModal() {
+                    const existingTitle = document.getElementById('modal-title');
+                    const existingDesc = document.getElementById('modal-desc');
+                    if (existingTitle) modalTitleValue = existingTitle.value;
+                    if (existingDesc) modalDescValue = existingDesc.value;
+
+                    const nameInput = el('input', {
+                        id: 'modal-title',
+                        type: 'text',
+                        value: modalTitleValue,
+                        oninput: (e) => { modalTitleValue = e.target.value; },
+                    });
+                    const descTextarea = el('textarea', {
+                        id: 'modal-desc',
+                        oninput: (e) => { modalDescValue = e.target.value; },
+                    });
+                    descTextarea.value = modalDescValue;
+
+                    const modalContent = el('div', { className: 'modal' },
+                        el('h2', null, 'Create New Project'),
+                        modalError ? el('p', { className: 'modal-error' }, modalError) : null,
+                        el('div', { className: 'form-group' },
+                            el('label', { htmlFor: 'modal-title' }, 'Title'),
+                            nameInput,
+                        ),
+                        el('div', { className: 'form-group' },
+                            el('label', { htmlFor: 'modal-desc' }, 'Description'),
+                            descTextarea,
+                        ),
+                        el('div', { className: 'modal-actions' },
+                            el('button', {
+                                className: 'btn btn-secondary',
+                                onclick: () => { showCreateModal = false; modalError = ''; render(); },
+                            }, 'Cancel'),
+                            el('button', {
+                                className: 'btn btn-primary',
+                                onclick: () => {
+                                    const t = nameInput.value.trim();
+                                    const d = descTextarea.value.trim();
+                                    if (!t) {
+                                        modalError = 'Title is required.';
+                                        render();
+                                        return;
+                                    }
+                                    handleCreateProject(t, d);
+                                },
+                            }, 'Create'),
+                        ),
+                    );
+
+                    return el('div', { className: 'modal-overlay', onclick: (e) => {
+                        if (e.target === e.currentTarget) {
+                            showCreateModal = false;
+                            modalError = '';
+                            render();
+                        }
+                    } }, modalContent);
+                }
+
+                function render() {
+                    const page = el('div', { className: 'projects-page' },
+                        el('div', { className: 'topbar' },
+                            el('h1', null, 'Chronicle Architect'),
+                            el('div', { className: 'topbar-actions' },
+                                el('button', { className: 'btn btn-secondary', onclick: () => {
+                                    showCreateModal = true;
+                                    modalError = '';
+                                    render();
+                                } }, '+ New Project'),
+                                el('button', { className: 'btn btn-danger', onclick: handleLogout }, 'Logout'),
+                            ),
+                        ),
+                        el('div', { className: 'projects-content' },
+                            el('div', { className: 'projects-header' },
+                                el('h2', null, 'Your Projects'),
+                            ),
+                            loading
+                                ? el('p', { style: { color: 'var(--text-muted)', fontSize: '14px' } }, 'Loading projects...')
+                                : loadError
+                                    ? el('div', { className: 'error-banner' }, loadError)
+                                    : projects.length === 0
+                                        ? el('div', { className: 'empty-projects' }, 'No projects yet. Create your first one!')
+                                        : el('div', { className: 'project-list' },
+                                            ...projects.map(p => {
+                                                const dateStr = p.created_at
+                                                    ? new Date(p.created_at.replace(' ', 'T') + 'Z').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                                                    : '';
+                                                const words = p.total_words || 0;
+                                                const tokens = p.total_tokens || 0;
+                                                return el('div', {
+                                                    className: 'project-card',
+                                                    onclick: () => { window.location.hash = '#/editor/' + p.id; router(); },
+                                                },
+                                                    el('button', {
+                                                        className: 'project-delete-btn',
+                                                        title: 'Delete project',
+                                                        onclick: (e) => {
+                                                            e.stopPropagation();
+                                                            handleDeleteProject(p.id, p.title);
+                                                        },
+                                                    }, '\uD83D\uDDD1'),
+                                                    el('h3', null, p.title || 'Untitled'),
+                                                    p.description ? el('p', null, p.description) : null,
+                                                    el('div', { className: 'project-meta' },
+                                                        dateStr ? el('span', null, 'Created ' + dateStr) : null,
+                                                        words > 0 ? el('span', null, 'Words: ' + words.toLocaleString() + ' \u00B7 Tokens: ' + tokens.toLocaleString()) : null,
+                                                    ),
+                                                );
+                                            }),
+                                        ),
+                        ),
+                        showCreateModal ? renderCreateModal() : null,
+                    );
+                    renderApp(page);
+                }
+
+                loadProjects();
+            }
+
+            // ─── Editor Page ─────────────────────────────────────────
+            function renderEditorPage(projectId, chapterId) {
+                // If no chapterId, redirect to first chapter (auto-create if needed)
+                if (!chapterId) {
+                    redirectToFirstChapter(projectId);
+                    return;
+                }
+
+                showStatusBar();
+                renderStatusBarContent();
+                updateStatusBar({ lastSave: lastSaveTime });
+                checkHealth();
+
+                let project = null;
+                let chapter = null;
+                let chapters = [];
+                let loading = true;
+                let loadError = '';
+                let saveState = 'idle'; // idle | typing | waiting | saving | saved | error
+                let debounceTimer = null;
+                let stateTimer = null;
+                let currentContent = '';
+                let sidebarCollapsed = false;
+                let wikiRefs = [];
+                let wikiRefsCollapsed = true;
+
+                // Cleanup function for this page
+                currentCleanup = function() {
+                    if (debounceTimer) clearTimeout(debounceTimer);
+                    if (stateTimer) clearTimeout(stateTimer);
+                    if (_tokenThrottle) clearTimeout(_tokenThrottle);
+                    debounceTimer = null;
+                    stateTimer = null;
+                    _tokenThrottle = null;
+                };
+
+                function getSaveLabel() {
+                    switch (saveState) {
+                        case 'typing': return 'Saving...';
+                        case 'waiting': return 'Waiting...';
+                        case 'saving': return 'Saving...';
+                        case 'saved': return 'Saved';
+                        case 'error': return 'Error saving';
+                        default: return '';
+                    }
+                }
+
+                function getSaveStateClass() {
+                    return 'state-' + saveState;
+                }
+
+                function setSaveState(newState) {
+                    saveState = newState;
+                    updateIndicator();
+                }
+
+                let _tokenThrottle = null;
+
+                async function updateTokenCountDisplay(text) {
+                    const wordCountEl = document.getElementById('word-count');
+                    if (!wordCountEl) return;
+                    const wc = countWords(text);
+                    wordCountEl.textContent = 'Words: ' + wc + ' \u00B7 Tokens: ...';
+                    const tokens = await fetchTokenCount(text);
+                    const wc2 = countWords(text); // re-read in case text changed during fetch
+                    wordCountEl.textContent = 'Words: ' + wc2 + ' \u00B7 Tokens: ' + tokens;
+                }
+
+                function updateIndicator() {
+                    const indicator = document.getElementById('save-indicator');
+                    const textarea = document.getElementById('editor-textarea');
+
+                    if (indicator) {
+                        indicator.textContent = getSaveLabel();
+                        indicator.className = 'save-indicator ' + getSaveStateClass();
+                    }
+                    if (textarea) {
+                        // Update word count immediately, token count with throttle
+                        const wc = countWords(textarea.value);
+                        const wordCountEl = document.getElementById('word-count');
+                        if (wordCountEl) {
+                            wordCountEl.textContent = 'Words: ' + wc + ' \u00B7 Tokens: ...';
+                        }
+                        if (_tokenThrottle) clearTimeout(_tokenThrottle);
+                        _tokenThrottle = setTimeout(() => {
+                            _tokenThrottle = null;
+                            updateTokenCountDisplay(textarea.value);
+                        }, 300);
+                    }
+                }
+
+                function triggerDebouncedSave() {
+                    if (debounceTimer) clearTimeout(debounceTimer);
+                    setSaveState('waiting');
+                    debounceTimer = setTimeout(() => {
+                        debounceTimer = null;
+                        performSave();
+                    }, 2000);
+                }
+
+                async function performSave() {
+                    const content = currentContent;
+                    setSaveState('saving');
+                    try {
+                        await apiPut('/api/chapters/' + chapterId, { content: content });
+                        setSaveState('saved');
+                        lastSaveTime = Date.now();
+                        updateStatusBar({ lastSave: lastSaveTime });
+                        if (stateTimer) clearTimeout(stateTimer);
+                        stateTimer = setTimeout(() => {
+                            if (saveState === 'saved') {
+                                setSaveState('idle');
+                            }
+                            stateTimer = null;
+                        }, 2000);
+
+                        // Scan wiki refs after successful save
+                        scanAndShowWikiRefs(projectId, content);
+                    } catch (err) {
+                        setSaveState('error');
+                        recordApiError(err.message);
+                        updateStatusBar({ errorMsg: err.message });
+                        if (stateTimer) clearTimeout(stateTimer);
+                        stateTimer = setTimeout(() => {
+                            if (saveState === 'error') {
+                                setSaveState('idle');
+                            }
+                            stateTimer = null;
+                        }, 3000);
+                    }
+                }
+
+                function handleInput(e) {
+                    currentContent = e.target.value;
+                    if (stateTimer) {
+                        clearTimeout(stateTimer);
+                        stateTimer = null;
+                    }
+                    if (debounceTimer) {
+                        clearTimeout(debounceTimer);
+                        debounceTimer = null;
+                    }
+                    setSaveState('typing');
+                    triggerDebouncedSave();
+
+                    // Update word count immediately
+                    const wordCountEl = document.getElementById('word-count');
+                    if (wordCountEl) {
+                        const wc = countWords(currentContent);
+                        wordCountEl.textContent = 'Words: ' + wc + ' \u00B7 Tokens: ...';
+                    }
+
+                    // Throttle token count to 300ms
+                    if (_tokenThrottle) clearTimeout(_tokenThrottle);
+                    _tokenThrottle = setTimeout(() => {
+                        _tokenThrottle = null;
+                        updateTokenCountDisplay(currentContent);
+                    }, 300);
+                }
+
+                async function scanAndShowWikiRefs(projectId, text) {
+                    try {
+                        await loadWikiCache(projectId);
+                    } catch (_) {}
+                    wikiRefs = scanWikiRefs(projectId, text);
+                    renderWikiRefsPanel();
+                }
+
+                function renderWikiRefsPanel() {
+                    const panel = document.getElementById('wiki-refs-panel');
+                    if (!panel) return;
+
+                    if (wikiRefs.length === 0) {
+                        panel.classList.add('hidden');
+                        return;
+                    }
+
+                    panel.classList.remove('hidden');
+                    const list = panel.querySelector('.wiki-refs-list');
+                    if (!list) return;
+
+                    list.innerHTML = '';
+                    for (const ref of wikiRefs) {
+                        const item = el('span', {
+                            className: 'wiki-ref-item',
+                            title: ref.category ? ref.category + ' / ' + ref.name : ref.name,
+                            onclick: () => showWikiDetailModal(ref.id),
+                        }, ref.name);
+                        list.appendChild(item);
+                    }
+                }
+
+                async function showWikiDetailModal(entryId) {
+                    let entry;
+                    try {
+                        entry = await apiGet('/api/wiki/' + entryId);
+                    } catch (err) {
+                        alert('Failed to load wiki entry: ' + err.message);
+                        return;
+                    }
+
+                    let parentName = '\u2014';
+                    if (entry.parent_id) {
+                        const parentEntry = wikiEntriesCache[projectId]?.find(e => e.id === entry.parent_id);
+                        if (parentEntry) parentName = parentEntry.name;
+                    }
+
+                    const modalContent = el('div', { className: 'modal modal-wide' },
+                        el('h2', null, entry.name || 'Untitled'),
+                        el('p', { className: 'modal-detail' }, el('strong', null, 'Category: '), entry.category || '\u2014'),
+                        el('p', { className: 'modal-detail' }, el('strong', null, 'Parent: '), parentName),
+                        entry.content
+                            ? el('div', { className: 'modal-content-block' }, entry.content)
+                            : el('p', { style: { color: 'var(--text-muted)', fontSize: '13px' } }, 'No content.'),
+                        el('div', { className: 'modal-actions' },
+                            el('button', {
+                                className: 'btn btn-secondary btn-sm',
+                                onclick: () => {
+                                    closeModal();
+                                    window.location.hash = '#/wiki/' + projectId;
+                                    router();
+                                },
+                            }, 'Open in Wiki'),
+                            el('button', {
+                                className: 'btn btn-primary btn-sm',
+                                onclick: () => { closeModal(); },
+                            }, 'Close'),
+                        ),
+                    );
+
+                    showModal(modalContent);
+                }
+
+                function showModal(content) {
+                    const overlay = el('div', { className: 'modal-overlay', onclick: (e) => {
+                        if (e.target === e.currentTarget) closeModal();
+                    } }, content);
+                    document.body.appendChild(overlay);
+                }
+
+                function closeModal() {
+                    const overlays = document.querySelectorAll('.modal-overlay');
+                    overlays.forEach(o => o.remove());
+                }
+
+                async function redirectToFirstChapter(projectId) {
+                    try {
+                        const chs = await apiGet('/api/projects/' + projectId + '/chapters');
+                        if (chs.length > 0) {
+                            window.location.hash = '#/editor/' + projectId + '/' + chs[0].id;
+                        } else {
+                            const newCh = await apiPost('/api/projects/' + projectId + '/chapters', { title: 'Chapter 1' });
+                            window.location.hash = '#/editor/' + projectId + '/' + newCh.id;
+                        }
+                        router();
+                    } catch (err) {
+                        renderApp(
+                            el('div', { className: 'editor-page' },
+                                el('div', { className: 'editor-topbar' },
+                                    el('button', { className: 'back-btn', onclick: () => { window.location.hash = '#/projects'; router(); } }, '\u2190'),
+                                    el('h2', { className: 'project-title' }, 'Error'),
+                                ),
+                                el('div', { className: 'editor-error' },
+                                    el('p', null, err.message),
+                                    el('button', { className: 'btn btn-primary', onclick: () => { window.location.hash = '#/projects'; router(); } }, 'Back to Projects'),
+                                ),
+                            )
+                        );
+                    }
+                }
+
+                async function loadAll() {
+                    loading = true;
+                    loadError = '';
+                    render();
+                    try {
+                        const [proj, chs] = await Promise.all([
+                            apiGet('/api/projects/' + projectId),
+                            apiGet('/api/projects/' + projectId + '/chapters'),
+                        ]);
+                        project = proj;
+                        chapters = chs;
+
+                        // Find current chapter
+                        chapter = chapters.find(c => c.id == chapterId);
+                        if (!chapter) {
+                            // Chapter might have been deleted; try loading directly
+                            try {
+                                chapter = await apiGet('/api/chapters/' + chapterId);
+                                chapters.push(chapter);
+                            } catch (e) {
+                                loadError = 'Chapter not found.';
+                                loading = false;
+                                render();
+                                return;
+                            }
+                        }
+                        currentContent = chapter.content || '';
+
+                        // Load wiki cache for ref scanning
+                        loadWikiCache(projectId).catch(() => {});
+
+                        loading = false;
+                        setSaveState('idle');
+                        render();
+
+                        // Initial wiki ref scan
+                        if (currentContent) {
+                            wikiRefs = scanWikiRefs(projectId, currentContent);
+                            renderWikiRefsPanel();
+                        }
+                    } catch (err) {
+                        loading = false;
+                        loadError = err.message;
+                        recordApiError(err.message);
+                        render();
+                    }
+                }
+
+                function goBack() {
+                    if (currentCleanup) currentCleanup();
+                    window.location.hash = '#/projects';
+                    router();
+                }
+
+                function goToWiki() {
+                    if (currentCleanup) currentCleanup();
+                    window.location.hash = '#/wiki/' + projectId;
+                    router();
+                }
+
+                async function switchChapter(newChapterId) {
+                    if (newChapterId == chapterId) return;
+                    // Save current content first if dirty
+                    if (saveState === 'typing' || saveState === 'waiting') {
+                        if (debounceTimer) {
+                            clearTimeout(debounceTimer);
+                            debounceTimer = null;
+                        }
+                        try {
+                            await apiPut('/api/chapters/' + chapterId, { content: currentContent });
+                        } catch (_) {}
+                    }
+                    window.location.hash = '#/editor/' + projectId + '/' + newChapterId;
+                    router();
+                }
+
+                async function addChapter() {
+                    const title = prompt('New chapter title:', 'Chapter ' + (chapters.length + 1));
+                    if (!title || !title.trim()) return;
+                    try {
+                        const newCh = await apiPost('/api/projects/' + projectId + '/chapters', { title: title.trim() });
+                        // Reload chapters and switch
+                        chapters = await apiGet('/api/projects/' + projectId + '/chapters');
+                        renderSidebar();
+                        switchChapter(newCh.id);
+                    } catch (err) {
+                        alert('Failed to create chapter: ' + err.message);
+                        recordApiError(err.message);
+                    }
+                }
+
+                async function renameChapter(chId, newTitle) {
+                    if (!newTitle || !newTitle.trim()) return;
+                    try {
+                        await apiPut('/api/chapters/' + chId, { title: newTitle.trim() });
+                        chapters = await apiGet('/api/projects/' + projectId + '/chapters');
+                        renderSidebar();
+                    } catch (err) {
+                        alert('Failed to rename chapter: ' + err.message);
+                        recordApiError(err.message);
+                    }
+                }
+
+                async function deleteChapter(chId, chTitle) {
+                    if (!confirm('Delete chapter "' + (chTitle || 'Untitled') + '"?')) return;
+                    try {
+                        await apiDelete('/api/chapters/' + chId);
+                        chapters = await apiGet('/api/projects/' + projectId + '/chapters');
+                        // If the deleted chapter was the current one, switch to the first available
+                        if (chId == chapterId) {
+                            if (chapters.length > 0) {
+                                switchChapter(chapters[0].id);
+                            } else {
+                                // No chapters left — auto-create one
+                                const newCh = await apiPost('/api/projects/' + projectId + '/chapters', { title: 'Chapter 1' });
+                                chapters = await apiGet('/api/projects/' + projectId + '/chapters');
+                                switchChapter(newCh.id);
+                            }
+                            return;
+                        }
+                        renderSidebar();
+                    } catch (err) {
+                        alert('Failed to delete chapter: ' + err.message);
+                        recordApiError(err.message);
+                    }
+                }
+
+                function startInlineEdit(chId, currentTitle, itemEl, titleSpan) {
+                    // Replace the title span with an input
+                    const input = el('input', {
+                        className: 'chapter-edit-input',
+                        type: 'text',
+                        value: currentTitle,
+                    });
+
+                    titleSpan.replaceWith(input);
+                    input.focus();
+                    input.select();
+
+                    const finish = async () => {
+                        const newTitle = input.value.trim();
+                        const newSpan = el('span', { className: 'chapter-title-text' }, newTitle || currentTitle);
+                        input.replaceWith(newSpan);
+                        if (newTitle && newTitle !== currentTitle) {
+                            await renameChapter(chId, newTitle);
+                        }
+                    };
+
+                    input.addEventListener('blur', finish);
+                    input.addEventListener('keydown', (e) => {
+                        if (e.key === 'Enter') {
+                            input.blur();
+                        } else if (e.key === 'Escape') {
+                            const newSpan = el('span', { className: 'chapter-title-text' }, currentTitle);
+                            input.replaceWith(newSpan);
+                        }
+                    });
+                }
+
+                function toggleSidebar() {
+                    sidebarCollapsed = !sidebarCollapsed;
+                    const sidebar = document.getElementById('editor-sidebar');
+                    if (sidebar) {
+                        sidebar.classList.toggle('collapsed', sidebarCollapsed);
+                    }
+                }
+
+                function renderSidebar() {
+                    const sidebarInner = document.getElementById('sidebar-inner');
+                    if (!sidebarInner) return;
+
+                    sidebarInner.innerHTML = '';
+
+                    // Project title
+                    sidebarInner.appendChild(el('h3', { className: 'sidebar-project-title' }, project ? project.title : 'Loading...'));
+
+                    // Chapters header
+                    sidebarInner.appendChild(el('div', { className: 'sidebar-section-header' }, 'Chapters'));
+
+                    // Chapter list
+                    const list = el('div', { className: 'chapter-list' });
+                    for (const ch of chapters) {
+                        const titleSpan = el('span', { className: 'chapter-title-text' }, ch.title || 'Untitled');
+                        const editBtn = el('button', {
+                            className: 'chapter-icon-btn',
+                            title: 'Rename',
+                            onclick: (e) => {
+                                e.stopPropagation();
+                                startInlineEdit(ch.id, ch.title || '', item, titleSpan);
+                            },
+                        }, '\u270E');
+                        const delBtn = el('button', {
+                            className: 'chapter-icon-btn delete-btn',
+                            title: 'Delete',
+                            onclick: (e) => {
+                                e.stopPropagation();
+                                deleteChapter(ch.id, ch.title);
+                            },
+                        }, '\uD83D\uDDD1');
+
+                        const item = el('div', {
+                            className: 'chapter-item' + (ch.id == chapterId ? ' active' : ''),
+                            onclick: () => switchChapter(ch.id),
+                        }, titleSpan, editBtn, delBtn);
+
+                        list.appendChild(item);
+                    }
+                    sidebarInner.appendChild(list);
+
+                    // Actions
+                    const actions = el('div', { className: 'sidebar-actions' },
+                        el('button', { className: 'btn btn-primary btn-sm', onclick: addChapter, style: { width: '100%' } }, '+ Add Chapter'),
+                        el('span', { className: 'sidebar-link', onclick: goToWiki }, '\uD83D\uDCDA Wiki'),
+                        el('span', { className: 'sidebar-link', onclick: goBack }, '\u2190 Back to Projects'),
+                    );
+                    sidebarInner.appendChild(actions);
+                }
+
+                function render() {
+                    if (loading) {
+                        renderApp(
+                            el('div', { className: 'editor-page' },
+                                el('div', { className: 'editor-topbar' },
+                                    el('button', { className: 'back-btn', onclick: goBack }, '\u2190'),
+                                    el('h2', { className: 'project-title' }, 'Loading...'),
+                                ),
+                                el('div', { className: 'editor-loading' }, 'Loading project...'),
+                            )
+                        );
+                        return;
+                    }
+
+                    if (loadError) {
+                        renderApp(
+                            el('div', { className: 'editor-page' },
+                                el('div', { className: 'editor-topbar' },
+                                    el('button', { className: 'back-btn', onclick: goBack }, '\u2190'),
+                                    el('h2', { className: 'project-title' }, 'Error'),
+                                ),
+                                el('div', { className: 'editor-error' },
+                                    el('p', null, loadError),
+                                    el('button', { className: 'btn btn-primary', onclick: goBack }, 'Back to Projects'),
+                                ),
+                            )
+                        );
+                        return;
+                    }
+
+                    if (!project) return;
+
+                    const saveIndicator = el('span', {
+                        id: 'save-indicator',
+                        className: 'save-indicator ' + getSaveStateClass(),
+                    }, getSaveLabel());
+
+                    const wordCountEl = el('span', {
+                        id: 'word-count',
+                        className: 'word-count',
+                    }, 'Words: ' + countWords(currentContent) + ' \u00B7 Tokens: ...');
+
+                    const textarea = el('textarea', {
+                        id: 'editor-textarea',
+                    }, currentContent);
+
+                    // Wiki refs panel
+                    const wikiRefsPanel = el('div', {
+                        id: 'wiki-refs-panel',
+                        className: 'wiki-refs-panel' + (wikiRefs.length === 0 ? ' hidden' : ''),
+                    },
+                        el('p', {
+                            className: 'wiki-refs-header',
+                            onclick: () => {
+                                wikiRefsCollapsed = !wikiRefsCollapsed;
+                                const list = document.querySelector('.wiki-refs-list');
+                                if (list) list.style.display = wikiRefsCollapsed ? 'none' : 'flex';
+                            },
+                        }, 'Wiki References (' + wikiRefs.length + ')'),
+                        el('div', { className: 'wiki-refs-list', style: { display: wikiRefsCollapsed ? 'none' : 'flex' } }),
+                    );
+
+                    const page = el('div', { className: 'editor-page' },
+                        el('div', { className: 'editor-topbar' },
+                            el('button', { className: 'back-btn', onclick: goBack }, '\u2190'),
+                            el('h2', { className: 'project-title' }, project.title || 'Untitled'),
+                            saveIndicator,
+                            wordCountEl,
+                        ),
+                        el('div', { className: 'editor-layout' },
+                            el('div', { id: 'editor-sidebar', className: 'sidebar' + (sidebarCollapsed ? ' collapsed' : '') },
+                                el('button', { className: 'sidebar-toggle', onclick: toggleSidebar, title: 'Toggle sidebar' }, '\u2630'),
+                                el('div', { id: 'sidebar-inner', className: 'sidebar-inner' }),
+                            ),
+                            el('div', { className: 'editor-main' },
+                                el('div', { className: 'editor-textarea-wrapper' },
+                                    textarea,
+                                ),
+                                wikiRefsPanel,
+                            ),
+                        ),
+                    );
+
+                    renderApp(page);
+
+                    // Render sidebar content
+                    renderSidebar();
+
+                    // Attach input handler
+                    const ta = document.getElementById('editor-textarea');
+                    if (ta) {
+                        if (ta._inputHandler) {
+                            ta.removeEventListener('input', ta._inputHandler);
+                        }
+                        ta._inputHandler = handleInput;
+                        ta.addEventListener('input', ta._inputHandler);
+                    }
+                }
+
+                loadAll();
+            }
+
+            // ─── Wiki Page ───────────────────────────────────────────
+            function renderWikiPage(projectId) {
+                showStatusBar();
+                renderStatusBarContent();
+                updateStatusBar({ lastSave: lastSaveTime });
+                checkHealth();
+
+                let project = null;
+                let entries = [];
+                let categories = [];
+                let loading = true;
+                let loadError = '';
+                let editingEntry = null; // null = new entry, object = editing
+                let formName = '';
+                let formCategory = '';
+                let formParentId = '';
+                let formContent = '';
+                let formError = '';
+
+                currentCleanup = function() {
+                    // No timers to clean up for wiki page
+                };
+
+                function goBack() {
+                    window.location.hash = '#/editor/' + projectId;
+                    router();
+                }
+
+                function goToProjects() {
+                    window.location.hash = '#/projects';
+                    router();
+                }
+
+                async function loadAll() {
+                    loading = true;
+                    loadError = '';
+                    render();
+                    try {
+                        const [proj, ents, cats] = await Promise.all([
+                            apiGet('/api/projects/' + projectId),
+                            apiGet('/api/projects/' + projectId + '/wiki'),
+                            apiGet('/api/projects/' + projectId + '/wiki/categories'),
+                        ]);
+                        project = proj;
+                        entries = ents;
+                        categories = cats;
+                        // Update wiki cache
+                        wikiEntriesCache[projectId] = ents;
+                        loading = false;
+                        render();
+                    } catch (err) {
+                        loading = false;
+                        loadError = err.message;
+                        recordApiError(err.message);
+                        render();
+                    }
+                }
+
+                function resetForm() {
+                    editingEntry = null;
+                    formName = '';
+                    formCategory = '';
+                    formParentId = '';
+                    formContent = '';
+                    formError = '';
+                    render();
+                }
+
+                function editEntry(entry) {
+                    editingEntry = entry;
+                    formName = entry.name || '';
+                    formCategory = entry.category || '';
+                    formParentId = entry.parent_id != null ? String(entry.parent_id) : '';
+                    formContent = entry.content || '';
+                    formError = '';
+                    render();
+                    // Scroll to form
+                    const formEl = document.getElementById('wiki-form-section');
+                    if (formEl) formEl.scrollIntoView({ behavior: 'smooth' });
+                }
+
+                async function handleSave() {
+                    formError = '';
+                    if (!formName.trim()) {
+                        formError = 'Name is required.';
+                        render();
+                        return;
+                    }
+
+                    const body = {
+                        name: formName.trim(),
+                        category: formCategory.trim(),
+                        parent_id: formParentId ? parseInt(formParentId) : null,
+                        content: formContent,
+                    };
+
+                    try {
+                        if (editingEntry) {
+                            await apiPut('/api/wiki/' + editingEntry.id, body);
+                        } else {
+                            await apiPost('/api/projects/' + projectId + '/wiki', body);
+                        }
+                        clearWikiCache(projectId);
+                        resetForm();
+                        loadAll();
+                    } catch (err) {
+                        formError = err.message;
+                        recordApiError(err.message);
+                        render();
+                    }
+                }
+
+                async function handleDelete(entryId) {
+                    if (!confirm('Delete this wiki entry? This cannot be undone.')) return;
+                    try {
+                        await apiDelete('/api/wiki/' + entryId);
+                        clearWikiCache(projectId);
+                        closeModal();
+                        loadAll();
+                    } catch (err) {
+                        alert('Failed to delete: ' + err.message);
+                        recordApiError(err.message);
+                    }
+                }
+
+                function showEntryDetailModal(entry) {
+                    let parentName = '\u2014';
+                    if (entry.parent_id) {
+                        const parentEntry = entries.find(e => e.id === entry.parent_id);
+                        if (parentEntry) parentName = parentEntry.name;
+                    }
+
+                    const modalContent = el('div', { className: 'modal modal-wide' },
+                        el('h2', null, entry.name || 'Untitled'),
+                        el('p', { className: 'modal-detail' }, el('strong', null, 'Category: '), entry.category || '\u2014'),
+                        el('p', { className: 'modal-detail' }, el('strong', null, 'Parent: '), parentName),
+                        entry.content
+                            ? el('div', { className: 'modal-content-block' }, entry.content)
+                            : el('p', { style: { color: 'var(--text-muted)', fontSize: '13px' } }, 'No content.'),
+                        el('div', { className: 'modal-actions' },
+                            el('button', {
+                                className: 'btn btn-danger btn-sm',
+                                onclick: () => handleDelete(entry.id),
+                            }, 'Delete'),
+                            el('button', {
+                                className: 'btn btn-secondary btn-sm',
+                                onclick: () => { closeModal(); },
+                            }, 'Cancel'),
+                            el('button', {
+                                className: 'btn btn-primary btn-sm',
+                                onclick: () => { closeModal(); editEntry(entry); },
+                            }, 'Edit'),
+                        ),
+                    );
+
+                    showWikiModal(modalContent);
+                }
+
+                function showWikiModal(content) {
+                    const overlay = el('div', { className: 'modal-overlay', onclick: (e) => {
+                        if (e.target === e.currentTarget) closeModal();
+                    } }, content);
+                    document.body.appendChild(overlay);
+                }
+
+                function closeModal() {
+                    const overlays = document.querySelectorAll('.modal-overlay');
+                    overlays.forEach(o => o.remove());
+                }
+
+                function renderCategorySections() {
+                    // Group by category
+                    const grouped = {};
+                    for (const entry of entries) {
+                        const cat = entry.category || 'Uncategorized';
+                        if (!grouped[cat]) grouped[cat] = [];
+                        grouped[cat].push(entry);
+                    }
+
+                    const catNames = Object.keys(grouped).sort();
+                    if (catNames.length === 0) {
+                        return el('p', { className: 'wiki-empty' }, 'No wiki entries yet. Create one below.');
+                    }
+
+                    const sections = catNames.map(catName => {
+                        const entryList = grouped[catName];
+                        const catDiv = el('div', { className: 'wiki-category' },
+                            el('div', {
+                                className: 'wiki-category-header',
+                                onclick: (e) => {
+                                    const parent = e.currentTarget.parentElement;
+                                    parent.classList.toggle('collapsed');
+                                },
+                            },
+                                el('span', { className: 'wiki-category-arrow' }, '\u25BC'),
+                                catName,
+                                el('span', { style: { color: 'var(--text-muted)', fontSize: '12px', marginLeft: 'auto' } }, entryList.length + ' entries'),
+                            ),
+                            el('div', { className: 'wiki-category-body' },
+                                ...entryList.map(entry => el('div', {
+                                    className: 'wiki-entry-item',
+                                    onclick: () => showEntryDetailModal(entry),
+                                }, entry.name || 'Untitled')),
+                            ),
+                        );
+                        return catDiv;
+                    });
+
+                    return el('div', null, ...sections);
+                }
+
+                function render() {
+                    if (loading) {
+                        renderApp(
+                            el('div', { className: 'wiki-page' },
+                                el('div', { className: 'wiki-topbar' },
+                                    el('button', { className: 'back-btn', onclick: goBack }, '\u2190'),
+                                    el('h1', null, 'Wiki'),
+                                    el('span', { className: 'project-title-sm' }, 'Loading...'),
+                                ),
+                                el('div', { style: { flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' } },
+                                    'Loading wiki...'),
+                            )
+                        );
+                        return;
+                    }
+
+                    if (loadError) {
+                        renderApp(
+                            el('div', { className: 'wiki-page' },
+                                el('div', { className: 'wiki-topbar' },
+                                    el('button', { className: 'back-btn', onclick: goBack }, '\u2190'),
+                                    el('h1', null, 'Wiki'),
+                                    el('span', { className: 'project-title-sm' }, project ? project.title : ''),
+                                ),
+                                el('div', { className: 'editor-error', style: { padding: '40px 24px' } },
+                                    el('p', null, loadError),
+                                    el('button', { className: 'btn btn-primary', onclick: goBack }, 'Back to Editor'),
+                                ),
+                            )
+                        );
+                        return;
+                    }
+
+                    if (!project) return;
+
+                    // Build parent options for form
+                    const parentOptions = entries.map(e => el('option', { value: e.id }, e.name || 'Untitled'));
+
+                    const page = el('div', { className: 'wiki-page' },
+                        el('div', { className: 'wiki-topbar' },
+                            el('button', { className: 'back-btn', onclick: goBack }, '\u2190'),
+                            el('h1', null, 'Wiki'),
+                            el('span', { className: 'project-title-sm' }, project.title || 'Untitled'),
+                            el('button', { className: 'btn btn-secondary btn-sm', onclick: goToProjects }, 'All Projects'),
+                        ),
+                        el('div', { className: 'wiki-content' },
+                            el('div', { className: 'wiki-section' },
+                                el('h2', null, 'Entries by Category'),
+                                renderCategorySections(),
+                            ),
+                            el('div', { id: 'wiki-form-section', className: 'wiki-section' },
+                                el('div', { className: 'wiki-form' },
+                                    el('h3', null, editingEntry ? 'Edit Entry: ' + (editingEntry.name || 'Untitled') : 'Add New Entry'),
+                                    formError ? el('p', { className: 'modal-error' }, formError) : null,
+                                    el('div', { className: 'form-group' },
+                                        el('label', { htmlFor: 'wiki-form-name' }, 'Name'),
+                                        el('input', {
+                                            id: 'wiki-form-name',
+                                            type: 'text',
+                                            value: formName,
+                                            oninput: (e) => { formName = e.target.value; },
+                                        }),
+                                    ),
+                                    el('div', { className: 'form-group' },
+                                        el('label', { htmlFor: 'wiki-form-category' }, 'Category'),
+                                        el('input', {
+                                            id: 'wiki-form-category',
+                                            type: 'text',
+                                            list: 'wiki-category-list',
+                                            value: formCategory,
+                                            oninput: (e) => { formCategory = e.target.value; },
+                                        }),
+                                        el('datalist', { id: 'wiki-category-list' },
+                                            ...categories.map(c => el('option', { value: c })),
+                                        ),
+                                    ),
+                                    el('div', { className: 'form-group' },
+                                        el('label', { htmlFor: 'wiki-form-parent' }, 'Parent (optional)'),
+                                        el('select', {
+                                            id: 'wiki-form-parent',
+                                            onchange: (e) => { formParentId = e.target.value; },
+                                        },
+                                            el('option', { value: '', selected: formParentId === '' ? 'selected' : null }, '\u2014 None \u2014'),
+                                            ...parentOptions.map(opt => {
+                                                if (String(opt.getAttribute('value')) === formParentId) {
+                                                    opt.setAttribute('selected', 'selected');
+                                                }
+                                                return opt;
+                                            }),
+                                        ),
+                                    ),
+                                    el('div', { className: 'form-group' },
+                                        el('label', { htmlFor: 'wiki-form-content' }, 'Content'),
+                                        el('textarea', {
+                                            id: 'wiki-form-content',
+                                            style: { minHeight: '120px' },
+                                            oninput: (e) => { formContent = e.target.value; },
+                                        }, formContent),
+                                    ),
+                                    el('div', { className: 'modal-actions' },
+                                        editingEntry
+                                            ? el('button', { className: 'btn btn-secondary btn-sm', onclick: resetForm }, 'Cancel')
+                                            : null,
+                                        el('button', { className: 'btn btn-primary', onclick: handleSave }, 'Save'),
+                                    ),
+                                ),
+                            ),
+                        ),
+                    );
+
+                    renderApp(page);
+
+                    // Set form values after render for textarea
+                    const contentTa = document.getElementById('wiki-form-content');
+                    if (contentTa) contentTa.value = formContent;
+
+                    // Set parent select value
+                    const parentSel = document.getElementById('wiki-form-parent');
+                    if (parentSel) parentSel.value = formParentId;
+                }
+
+                loadAll();
+            }
+
+            // ─── Bootstrap ───────────────────────────────────────────
+            function init() {
+                window.addEventListener('hashchange', router);
+                router();
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', init);
+            } else {
+                init();
+            }
+        })();
+    </script>
+</body>
+</html>
