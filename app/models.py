@@ -35,6 +35,7 @@ class ProjectResponse(BaseModel):
     content: str
     created_at: str
     updated_at: str
+    last_accessed: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -45,12 +46,14 @@ class SetupResponse(BaseModel):
 
 class ChapterCreate(BaseModel):
     title: str = "Untitled"
+    volume_id: Optional[int] = None
 
 
 class ChapterUpdate(BaseModel):
     title: Optional[str] = None
     content: Optional[str] = None
     position: Optional[int] = None
+    volume_id: Optional[int] = None
 
 
 class ChapterResponse(BaseModel):
@@ -59,6 +62,7 @@ class ChapterResponse(BaseModel):
     title: str
     content: str
     position: int
+    volume_id: Optional[int] = None
     created_at: str
     updated_at: str
     model_config = ConfigDict(from_attributes=True)
@@ -68,11 +72,39 @@ class ChapterReorder(BaseModel):
     new_position: int
 
 
+class VolumeCreate(BaseModel):
+    title: str = "Untitled Volume"
+
+
+class VolumeUpdate(BaseModel):
+    title: Optional[str] = None
+    position: Optional[int] = None
+
+
+class VolumeResponse(BaseModel):
+    id: int
+    project_id: int
+    title: str
+    position: int
+    created_at: str
+    updated_at: str
+    model_config = ConfigDict(from_attributes=True)
+
+
+class VolumeReorder(BaseModel):
+    new_position: int
+
+
+class ChapterAssignVolume(BaseModel):
+    volume_id: Optional[int] = None
+
+
 class WikiEntryCreate(BaseModel):
     name: str
     category: str
     parent_id: Optional[int] = None
     content: str = ""
+    metadata_json: str = "{}"
 
 
 class WikiEntryUpdate(BaseModel):
@@ -80,6 +112,7 @@ class WikiEntryUpdate(BaseModel):
     category: Optional[str] = None
     parent_id: Optional[int] = None
     content: Optional[str] = None
+    metadata_json: Optional[str] = None
 
 
 class WikiEntryResponse(BaseModel):
@@ -89,6 +122,7 @@ class WikiEntryResponse(BaseModel):
     category: str
     parent_id: Optional[int] = None
     content: str
+    metadata_json: str = "{}"
     created_at: str
     updated_at: str
     model_config = ConfigDict(from_attributes=True)

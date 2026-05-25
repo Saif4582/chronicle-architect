@@ -16,8 +16,7 @@ env/
 *.swo
 
 # Project data
-data/chronicle.db
-data/.secret
+data/
 
 # OS
 .DS_Store

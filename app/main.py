@@ -1,13 +1,14 @@
 import json
 import os
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from app.database import init_db
 from app.routers.auth_router import router as auth_router
 from app.routers.projects_router import router as projects_router
 from app.routers.chapters_router import router as chapters_router
+from app.routers.volumes_router import router as volumes_router
 from app.routers.wiki_router import router as wiki_router
 from app.tokenizer import get_token_count
 from app.auth import get_current_user
@@ -37,6 +38,7 @@ app.add_middleware(
 app.include_router(auth_router)
 app.include_router(projects_router)
 app.include_router(chapters_router)
+app.include_router(volumes_router)
 app.include_router(wiki_router)
 
 
