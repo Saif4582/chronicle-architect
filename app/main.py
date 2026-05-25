@@ -10,6 +10,8 @@ from app.routers.projects_router import router as projects_router
 from app.routers.chapters_router import router as chapters_router
 from app.routers.volumes_router import router as volumes_router
 from app.routers.wiki_router import router as wiki_router
+from app.routers.admin_router import router as admin_router
+from app.rate_limit import rate_limit_middleware
 from app.tokenizer import get_token_count
 from app.auth import get_current_user
 from app.models import TokenizeRequest, TokenizeResponse
@@ -35,11 +37,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.middleware("http")(rate_limit_middleware)
+
+
 app.include_router(auth_router)
 app.include_router(projects_router)
 app.include_router(chapters_router)
 app.include_router(volumes_router)
 app.include_router(wiki_router)
+app.include_router(admin_router)
 
 
 @app.get("/api/health")

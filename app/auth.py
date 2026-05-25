@@ -23,9 +23,13 @@ def verify_password(plain_password: str, hashed: str) -> bool:
     return bcrypt.checkpw(sha.encode("utf-8"), hashed.encode("utf-8"))
 
 
-def create_jwt(data: dict, secret: str) -> str:
+def create_jwt(data: dict, secret: str, expiry_days: int | None = None, session_only: bool = False) -> str:
     payload = data.copy()
-    payload["exp"] = datetime.now(timezone.utc) + timedelta(days=TOKEN_EXPIRE_DAYS)
+    if session_only:
+        payload["exp"] = datetime.now(timezone.utc) + timedelta(hours=1)
+    else:
+        days = expiry_days if expiry_days is not None else TOKEN_EXPIRE_DAYS
+        payload["exp"] = datetime.now(timezone.utc) + timedelta(days=days)
     payload["iat"] = datetime.now(timezone.utc)
     return jwt.encode(payload, secret, algorithm=ALGORITHM)
 
@@ -56,4 +60,39 @@ async def get_current_user(
     if user is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
 
-    return dict(user)
+    user_dict = dict(user)
+
+    # Check token_version to detect revoked tokens
+    token_version = payload.get("token_version", 0)
+    if user_dict.get("token_version", 0) != token_version:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token has been revoked. Please log in again.")
+
+    # Update last_active_at on every authenticated request
+    now = datetime.now(timezone.utc).isoformat()
+    await db.execute("UPDATE users SET last_active_at = ? WHERE id = ?", (now, user_id))
+    await db.commit()
+
+    # Re-read the user to get the updated last_active_at
+    cursor = await db.execute("SELECT * FROM users WHERE id = ?", (user_id,))
+    user = await cursor.fetchone()
+    user_dict = dict(user)
+
+    return user_dict
+
+
+async def get_current_admin_or_owner(
+    current_user: dict = Depends(get_current_user),
+):
+    if current_user["role"] not in ("admin", "owner"):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required.")
+    return current_user
+
+
+async def log_action(db, user_id: int, username: str, action: str, details: str = ""):
+    from datetime import datetime
+    timestamp = datetime.utcnow().isoformat()
+    await db.execute(
+        "INSERT INTO logs (timestamp, user_id, username, action, details) VALUES (?, ?, ?, ?, ?)",
+        (timestamp, user_id, username, action, details),
+    )
+    await db.commit()

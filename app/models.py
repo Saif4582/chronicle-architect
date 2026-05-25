@@ -138,3 +138,24 @@ class TokenizeRequest(BaseModel):
 
 class TokenizeResponse(BaseModel):
     tokens: int
+
+
+class AdminSettingsUpdate(BaseModel):
+    lockout_threshold: Optional[int] = None
+    lockout_duration_minutes: Optional[int] = None
+
+
+class UserProfileUpdate(BaseModel):
+    display_name: Optional[str] = None
+    new_password: Optional[str] = None
+    new_username: Optional[str] = None
+
+
+class AdminUserUpdate(BaseModel):
+    username: Optional[str] = None
+    display_name: Optional[str] = None
+    new_password: Optional[str] = None
+
+
+class ReorderRequest(BaseModel):
+    order: list[int]

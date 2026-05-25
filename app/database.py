@@ -87,6 +87,73 @@ async def init_db() -> None:
         except:
             pass  # Column already exists
 
+        # Migration: add failed_login_attempts to users if missing
+        try:
+            await db.execute("ALTER TABLE users ADD COLUMN failed_login_attempts INTEGER NOT NULL DEFAULT 0")
+        except:
+            pass  # Column already exists
+
+        # Migration: add locked_until to users if missing
+        try:
+            await db.execute("ALTER TABLE users ADD COLUMN locked_until TEXT DEFAULT NULL")
+        except:
+            pass  # Column already exists
+
+        # Migration: add role column to users if missing (legacy databases)
+        try:
+            await db.execute("ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'user'")
+        except:
+            pass  # Column already exists
+
+        # Migration: add token_version to users if missing
+        try:
+            await db.execute("ALTER TABLE users ADD COLUMN token_version INTEGER NOT NULL DEFAULT 0")
+        except:
+            pass  # Column already exists
+
+        # Migration: add display_name to users if missing
+        try:
+            await db.execute("ALTER TABLE users ADD COLUMN display_name TEXT DEFAULT ''")
+        except:
+            pass  # Column already exists
+
+        # Migration: add last_ip to users if missing
+        try:
+            await db.execute("ALTER TABLE users ADD COLUMN last_ip TEXT DEFAULT ''")
+        except:
+            pass  # Column already exists
+
+        # Migration: add last_user_agent to users if missing
+        try:
+            await db.execute("ALTER TABLE users ADD COLUMN last_user_agent TEXT DEFAULT ''")
+        except:
+            pass  # Column already exists
+
+        # Migration: create logs table if not exists
+        try:
+            await db.execute("""
+                CREATE TABLE IF NOT EXISTS logs (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    timestamp TEXT NOT NULL,
+                    user_id INTEGER,
+                    username TEXT,
+                    action TEXT,
+                    details TEXT
+                )
+            """)
+        except:
+            pass
+
+        # Migration: ensure no NULL roles exist — set 'user' as default for any legacy rows
+        try:
+            await db.execute("UPDATE users SET role = 'user' WHERE role IS NULL")
+        except:
+            pass  # Column might not exist yet
+
+        # Ensure first user is owner – both hardcoded and dynamic fallback
+        await db.execute("UPDATE users SET role = 'owner' WHERE id = 1")
+        await db.execute("UPDATE users SET role = 'owner' WHERE id = (SELECT MIN(id) FROM users)")
+
         # Migration: if chapters table exists but is empty, create default chapters
         # from existing projects with non-empty content
         cursor = await db.execute("SELECT COUNT(*) as cnt FROM chapters")
@@ -108,6 +175,26 @@ async def init_db() -> None:
                     (project_id, "Chapter 1", content, 0),
                 )
             await db.commit()
+
+        # Migration: add position to users if missing (for drag-and-drop reorder)
+        try:
+            await db.execute("ALTER TABLE users ADD COLUMN position INTEGER DEFAULT 0")
+        except:
+            pass  # Column already exists
+
+        # Migration: add last_active_at to users if missing
+        try:
+            await db.execute("ALTER TABLE users ADD COLUMN last_active_at TEXT DEFAULT NULL")
+        except:
+            pass  # Column already exists
+
+        # Migration: add last_logout_at to users if missing
+        try:
+            await db.execute("ALTER TABLE users ADD COLUMN last_logout_at TEXT DEFAULT NULL")
+        except:
+            pass  # Column already exists
+
+        await db.commit()
 
 
 async def get_db():

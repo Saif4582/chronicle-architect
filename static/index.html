@@ -579,7 +579,6 @@
             border-right: 1px solid var(--border-light);
             display: flex;
             flex-direction: column;
-            overflow-y: auto;
         }
 
         .sidebar.collapsed {
@@ -606,6 +605,18 @@
             background: var(--bg-elevated);
         }
 
+        .sidebar-header {
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-elevated);
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .sidebar.collapsed .sidebar-header {
+            display: none;
+        }
+
         .sidebar-inner {
             flex: 1;
             display: flex;
@@ -623,7 +634,7 @@
             font-size: 15px;
             font-weight: 700;
             color: var(--text-primary);
-            border-bottom: 1px solid var(--border-light);
+            border-bottom: none;
             margin: 0;
             white-space: nowrap;
             overflow: hidden;
@@ -1350,42 +1361,72 @@
             display: none;
         }
 
-        /* ---------- Tutorial Modal ---------- */
-        .tutorial-modal {
-            max-width: 600px;
+        /* ---------- Help Modal ---------- */
+        .help-modal {
+            max-width: 680px;
         }
 
-        .tutorial-modal h2 {
+        .help-tabs {
+            display: flex;
+            gap: 0;
+            border-bottom: 1px solid var(--border-light);
+            margin-bottom: 20px;
+        }
+
+        .help-tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            color: var(--text-secondary);
+            font-size: 14px;
+            font-weight: 600;
+            border-bottom: 2px solid transparent;
+            transition: color 0.15s, border-color 0.15s;
+            background: none;
+            border-top: none;
+            border-left: none;
+            border-right: none;
+            font-family: inherit;
+        }
+
+        .help-tab:hover {
+            color: var(--text-primary);
+        }
+
+        .help-tab.active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
+        }
+
+        .help-tab-content {
+            min-height: 280px;
+            max-height: 55vh;
+            overflow-y: auto;
+        }
+
+        .help-tab-panel {
+            display: none;
+        }
+
+        .help-tab-panel.active {
+            display: block;
+        }
+
+        .help-tab-panel h2 {
             margin: 0 0 12px 0;
             font-size: 20px;
             font-weight: 700;
             color: var(--text-primary);
         }
 
-        .tutorial-modal h3 {
-            margin: 20px 0 6px 0;
-            font-size: 15px;
-            font-weight: 600;
-            color: var(--text-secondary);
-        }
-
-        .tutorial-modal p {
-            margin: 0 0 8px 0;
+        .help-tab-panel p {
+            margin: 0 0 12px 0;
             font-size: 13px;
             color: var(--text-secondary);
-            line-height: 1.6;
+            line-height: 1.7;
         }
 
-        .tutorial-modal ul {
-            margin: 4px 0 12px 0;
-            padding-left: 20px;
-            font-size: 13px;
-            color: var(--text-secondary);
-            line-height: 1.6;
-        }
-
-        .tutorial-modal ul li {
-            margin-bottom: 4px;
+        .help-tab-panel p:last-child {
+            margin-bottom: 0;
         }
 
         /* ---------- Drag and Drop ---------- */
@@ -1835,6 +1876,184 @@
             scrollbar-width: thin;
             scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
         }
+        /* ---------- Admin Panel ---------- */
+        .admin-modal {
+            max-width: 95vw;
+            width: 95%;
+        }
+
+        .admin-tabs {
+            display: flex;
+            gap: 0;
+            border-bottom: 1px solid var(--border-light);
+            margin-bottom: 20px;
+        }
+
+        .admin-tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            color: var(--text-secondary);
+            font-size: 14px;
+            font-weight: 600;
+            border-bottom: 2px solid transparent;
+            transition: color 0.15s, border-color 0.15s;
+            background: none;
+            border-top: none;
+            border-left: none;
+            border-right: none;
+            font-family: inherit;
+        }
+
+        .admin-tab:hover {
+            color: var(--text-primary);
+        }
+
+        .admin-tab.active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
+        }
+
+        .admin-users-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        .admin-users-table th,
+        .admin-users-table td {
+            padding: 10px 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .admin-users-table th {
+            color: var(--text-muted);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 0.5px;
+        }
+
+        .admin-users-table td {
+            color: var(--text-primary);
+        }
+
+        .admin-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .admin-badge.owner {
+            background: rgba(212, 160, 23, 0.2);
+            color: var(--accent-primary);
+        }
+
+        .admin-badge.admin {
+            background: rgba(79, 195, 247, 0.2);
+            color: var(--info);
+        }
+
+        .admin-badge.user {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-secondary);
+        }
+
+        .admin-badge.locked {
+            background: rgba(239, 83, 80, 0.2);
+            color: var(--error);
+        }
+
+        .admin-badge.unlocked {
+            background: rgba(102, 187, 106, 0.2);
+            color: var(--success);
+        }
+
+        .admin-btn-small {
+            padding: 4px 10px;
+            font-size: 12px;
+            border-radius: 4px;
+            border: 1px solid var(--border-light);
+            background: transparent;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-family: inherit;
+            transition: border-color 0.15s, color 0.15s;
+        }
+
+        .admin-btn-small:hover:not(:disabled) {
+            border-color: var(--accent-primary);
+            color: var(--accent-primary);
+        }
+
+        .admin-btn-small:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .admin-btn-small.danger:hover:not(:disabled) {
+            border-color: var(--error);
+            color: var(--error);
+        }
+
+        .admin-settings-form {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            max-width: 400px;
+        }
+
+        .admin-settings-form .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .admin-settings-form .form-group label {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .admin-settings-form .form-group input {
+            background: var(--bg-input);
+            border: 1px solid var(--border-medium);
+            border-radius: 6px;
+            padding: 10px 12px;
+            color: var(--text-primary);
+            font-size: 14px;
+            font-family: inherit;
+            outline: none;
+        }
+
+        .admin-settings-form .form-group input:focus {
+            border-color: var(--accent-primary);
+        }
+
+        /* Drag and drop for admin table */
+        .admin-users-table tr[draggable="true"] {
+            cursor: grab;
+        }
+        .admin-users-table tr[draggable="true"]:active {
+            cursor: grabbing;
+        }
+        .admin-users-table tr.drag-source {
+            opacity: 0.5;
+        }
+        .admin-users-table tr.drag-over td {
+            border-bottom: 2px solid var(--accent-primary) !important;
+        }
+        .status-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 4px;
+        }
+        .status-dot.active { background: var(--success); }
+        .status-dot.idle { background: var(--warning); }
+        .status-dot.offline { background: var(--text-muted); }
     </style>
     <!-- Google Fonts for editor -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -2003,16 +2222,107 @@
                 return elem;
             };
 
-            function getToken() {
-                return localStorage.getItem('token');
+            function parseUserAgent(ua) {
+                if (!ua) return 'Unknown';
+                let result = '';
+                // Browser
+                if (ua.includes('Chrome/') && !ua.includes('Edg/')) {
+                    const match = ua.match(/Chrome\/(\d+)/);
+                    result = 'Chrome ' + (match ? match[1] : '?');
+                } else if (ua.includes('Firefox/')) {
+                    const match = ua.match(/Firefox\/(\d+)/);
+                    result = 'Firefox ' + (match ? match[1] : '?');
+                } else if (ua.includes('Edg/')) {
+                    const match = ua.match(/Edg\/(\d+)/);
+                    result = 'Edge ' + (match ? match[1] : '?');
+                } else if (ua.includes('Safari/') && !ua.includes('Chrome')) {
+                    const match = ua.match(/Version\/(\d+)/);
+                    result = 'Safari ' + (match ? match[1] : '?');
+                } else {
+                    result = ua.substring(0, 20);
+                }
+                // OS
+                if (ua.includes('Windows NT 10')) result += ' on Windows 10';
+                else if (ua.includes('Windows NT 11')) result += ' on Windows 11';
+                else if (ua.includes('Windows NT')) result += ' on Windows';
+                else if (ua.includes('Mac OS X')) result += ' on macOS';
+                else if (ua.includes('Linux') && !ua.includes('Android')) result += ' on Linux';
+                else if (ua.includes('Android')) result += ' on Android';
+                else if (ua.includes('iPhone') || ua.includes('iPad')) result += ' on iOS';
+                return result;
             }
 
-            function setToken(token) {
-                localStorage.setItem('token', token);
+            function getUserStatus(lastActiveAt, lastLogoutAt) {
+                // Never logged in
+                if (!lastActiveAt && !lastLogoutAt) return { label: 'Never active', cls: '' };
+
+                // Logged out: last_logout_at is more recent than last_active_at, or no active_at
+                if (lastLogoutAt) {
+                    const logoutTime = new Date(lastLogoutAt).getTime();
+                    if (!isNaN(logoutTime)) {
+                        const activeTime = lastActiveAt ? new Date(lastActiveAt).getTime() : 0;
+                        if (logoutTime > activeTime) {
+                            return {
+                                label: 'Offline',
+                                cls: 'offline',
+                                tooltip: lastActiveAt ? 'Last active: ' + lastActiveAt : ''
+                            };
+                        }
+                    }
+                }
+
+                // Has activity: compute active/idle/offline
+                if (!lastActiveAt) return { label: 'Unknown', cls: 'offline' };
+                const now = Date.now();
+                const then = new Date(lastActiveAt).getTime();
+                if (isNaN(then)) return { label: 'Unknown', cls: 'offline' };
+                const diffMinutes = (now - then) / 60000;
+                if (diffMinutes < 5) return { label: 'Online', cls: 'active' };
+                if (diffMinutes < 30) return { label: 'Idle', cls: 'idle' };
+                return {
+                    label: 'Offline',
+                    cls: 'offline',
+                    tooltip: 'Last active: ' + lastActiveAt
+                };
+            }
+
+            function getToken() {
+                return sessionStorage.getItem('token') || localStorage.getItem('token');
+            }
+
+            function setToken(token, sessionOnly) {
+                if (sessionOnly) {
+                    sessionStorage.setItem('token', token);
+                    localStorage.removeItem('token');
+                } else {
+                    localStorage.setItem('token', token);
+                    sessionStorage.removeItem('token');
+                }
             }
 
             function clearToken() {
                 localStorage.removeItem('token');
+                sessionStorage.removeItem('token');
+            }
+
+            function decodeToken(token) {
+                try {
+                    const payload = token.split('.')[1];
+                    // Convert base64url to base64
+                    let base64 = payload.replace(/-/g, '+').replace(/_/g, '/');
+                    // Pad with = characters if needed
+                    while (base64.length % 4 !== 0) base64 += '=';
+                    return JSON.parse(atob(base64));
+                } catch (_) {
+                    return null;
+                }
+            }
+
+            function getUserRole() {
+                const token = getToken();
+                if (!token) return null;
+                const decoded = decodeToken(token);
+                return decoded ? decoded.role : null;
             }
 
             function apiHeaders() {
@@ -2088,6 +2398,22 @@
                 }
             }
 
+            async function apiPatch(path, body) {
+                const res = await fetch(path, {
+                    method: 'PATCH',
+                    headers: apiHeaders(),
+                    body: JSON.stringify(body),
+                });
+                if (!res.ok) {
+                    let detail = res.statusText;
+                    try { const err = await res.json(); if (err.detail) detail = err.detail; } catch (_) {}
+                    const error = new Error(detail);
+                    error.status = res.status;
+                    throw error;
+                }
+                return res.json();
+            }
+
             function closeModal() {
                 const overlays = document.querySelectorAll('.modal-overlay');
                 overlays.forEach(o => o.remove());
@@ -2115,6 +2441,1011 @@
                     ),
                 );
                 showModalOverlay(content);
+            }
+
+            // ─── Admin Panel ───────────────────────────────────────
+            function openAdminPanel() {
+                let activeTab = 'users';
+                let users = [];
+                let tokens = [];
+                let settings = { lockout_threshold: 5, lockout_duration_minutes: 30, jwt_expiry_days: 30, session_only: false, admins_can_create_users: true, admins_can_delete_users: true, admins_can_see_user_ids: false, admins_can_see_device_info: false, admins_can_see_stats: false };
+                let loading = true;
+                let tokensLoading = true;
+                let loadError = '';
+                let saveSuccess = '';
+                let saveError = '';
+                let saving = false;
+                let logs = [];
+                let logsAllActions = [];
+                let logsLoading = false;
+                let logsError = '';
+                let logsPage = 1;
+                let logsTotal = 0;
+                let logsFilterAction = '';
+
+                function loadData() {
+                    loading = true;
+                    tokensLoading = true;
+                    loadError = '';
+                    Promise.all([
+                        apiGet('/api/admin/users'),
+                        apiGet('/api/admin/settings'),
+                        apiGet('/api/admin/tokens').catch(() => []),
+                    ])
+                        .then(([usersData, settingsData, tokensData]) => {
+                            users = usersData;
+                            settings = settingsData;
+                            tokens = tokensData;
+                            loading = false;
+                            tokensLoading = false;
+                            renderModal();
+                        })
+                        .catch(err => {
+                            loading = false;
+                            tokensLoading = false;
+                            loadError = err.message;
+                            renderModal();
+                        });
+                }
+
+                function loadLogs(page, actionFilter) {
+                    logsLoading = true;
+                    logsPage = page || 1;
+                    if (actionFilter !== undefined) logsFilterAction = actionFilter;
+                    renderModal();
+                    let url = '/api/admin/logs?page=' + logsPage + '&per_page=50';
+                    if (logsFilterAction) url += '&action=' + encodeURIComponent(logsFilterAction);
+                    apiGet(url)
+                        .then(data => {
+                            logs = data.logs;
+                            logsTotal = data.total;
+                            logsAllActions = data.actions || [];
+                            logsLoading = false;
+                            renderModal();
+                        })
+                        .catch(err => {
+                            logsLoading = false;
+                            logsError = err.message;
+                            renderModal();
+                        });
+                }
+
+                function handleToggleLock(userId) {
+                    apiPatch('/api/admin/users/' + userId + '/lock', {})
+                        .then(() => loadData())
+                        .catch(err => {
+                            loadError = err.message;
+                            renderModal();
+                        });
+                }
+
+                function handleChangeRole(userId, currentRole) {
+                    const newRole = currentRole === 'admin' ? 'user' : 'admin';
+                    apiPatch('/api/admin/users/' + userId + '/role', { role: newRole })
+                        .then(() => loadData())
+                        .catch(err => {
+                            loadError = err.message;
+                            renderModal();
+                        });
+                }
+
+                function showInlineConfirm(message, onConfirm) {
+                    const confirmContent = el('div', { className: 'modal' },
+                        el('p', { style: { color: 'var(--text-primary)', fontSize: '14px', marginBottom: '16px' } }, message),
+                        el('div', { className: 'modal-actions' },
+                            el('button', { className: 'btn btn-secondary', onclick: renderModal }, 'Cancel'),
+                            el('button', { className: 'btn btn-danger', onclick: () => { onConfirm(); } }, 'Confirm'),
+                        ),
+                    );
+
+                    const existingOverlay = document.querySelector('.modal-overlay');
+                    if (existingOverlay) {
+                        existingOverlay.innerHTML = '';
+                        existingOverlay.appendChild(confirmContent);
+                    }
+                }
+
+                function handleDeleteUser(userId, username) {
+                    const msg = 'Are you sure you want to delete user "' + username + '"? All their data (projects, chapters, wiki entries) will be permanently deleted.';
+                    showInlineConfirm(msg, () => {
+                        apiDelete('/api/admin/users/' + userId)
+                            .then(() => {
+                                loadData();
+                                // Show success toast
+                                saveSuccess = 'User "' + username + '" deleted successfully.';
+                                saveError = '';
+                                renderModal();
+                            })
+                            .catch(err => {
+                                loadError = err.message;
+                                renderModal();
+                            });
+                    });
+                }
+
+                function handleSaveSettings() {
+                    saving = true;
+                    saveError = '';
+                    saveSuccess = '';
+
+                    const thresholdInput = document.getElementById('lockout-threshold');
+                    const durationInput = document.getElementById('lockout-duration');
+                    const jwtExpiryInput = document.getElementById('jwt-expiry');
+                    const sessionCheckbox = document.getElementById('session-only');
+                    const adminsCreateInput = document.getElementById('admins-can-create-users');
+                    const adminsDeleteInput = document.getElementById('admins-can-delete-users');
+                    const userIdsInput = document.getElementById('admins-can-see-user-ids');
+                    const deviceInfoInput = document.getElementById('admins-can-see-device-info');
+                    const statsInput = document.getElementById('admins-can-see-stats');
+                    const editUsersInput = document.getElementById('admins-can-edit-users');
+                    const seeLogsInput = document.getElementById('admins-can-see-logs');
+                    const body = {};
+                    if (thresholdInput) body.lockout_threshold = parseInt(thresholdInput.value);
+                    if (durationInput) body.lockout_duration_minutes = parseInt(durationInput.value);
+                    if (jwtExpiryInput) body.jwt_expiry_days = parseInt(jwtExpiryInput.value);
+                    if (sessionCheckbox) body.session_only = sessionCheckbox.checked;
+                    if (adminsCreateInput) body.admins_can_create_users = adminsCreateInput.checked;
+                    if (adminsDeleteInput) body.admins_can_delete_users = adminsDeleteInput.checked;
+                    if (userIdsInput) body.admins_can_see_user_ids = userIdsInput.checked;
+                    if (deviceInfoInput) body.admins_can_see_device_info = deviceInfoInput.checked;
+                    if (statsInput) body.admins_can_see_stats = statsInput.checked;
+                    if (editUsersInput) body.admins_can_edit_users = editUsersInput.checked;
+                    if (seeLogsInput) body.admins_can_see_logs = seeLogsInput.checked;
+
+                    apiPatch('/api/admin/settings', body)
+                        .then(data => {
+                            settings = data;
+                            saving = false;
+                            saveSuccess = 'Settings saved successfully.';
+                            renderModal();
+                        })
+                        .catch(err => {
+                            saving = false;
+                            saveError = err.message;
+                            renderModal();
+                        });
+                }
+
+                function renderModal() {
+                    const tabContent = activeTab === 'users' ? renderUsersTab()
+                        : activeTab === 'tokens' ? renderTokensTab()
+                        : activeTab === 'logs' ? renderLogsTab()
+                        : renderSettingsTab();
+
+                    const content = el('div', { className: 'modal admin-modal' },
+                        el('h2', null, 'Admin Panel'),
+                        el('div', { className: 'admin-tabs' },
+                            el('button', {
+                                className: 'admin-tab' + (activeTab === 'users' ? ' active' : ''),
+                                onclick: () => { activeTab = 'users'; renderModal(); },
+                            }, 'Users'),
+                            (getUserRole() === 'owner')
+                                ? el('button', {
+                                    className: 'admin-tab' + (activeTab === 'settings' ? ' active' : ''),
+                                    onclick: () => { activeTab = 'settings'; renderModal(); },
+                                }, 'Settings')
+                                : null,
+                            (getUserRole() === 'owner')
+                                ? el('button', {
+                                    className: 'admin-tab' + (activeTab === 'tokens' ? ' active' : ''),
+                                    onclick: () => { activeTab = 'tokens'; renderModal(); },
+                                }, 'Tokens')
+                                : null,
+                            (getUserRole() === 'owner' || settings.admins_can_see_logs)
+                                ? el('button', {
+                                    className: 'admin-tab' + (activeTab === 'logs' ? ' active' : ''),
+                                    onclick: () => { activeTab = 'logs'; loadLogs(1); renderModal(); },
+                                }, 'Logs')
+                                : null,
+                        ),
+                        loadError ? el('div', { className: 'error-banner' }, loadError) : null,
+                        saveSuccess ? el('div', { style: { color: 'var(--success)', fontSize: '13px', marginBottom: '12px' } }, saveSuccess) : null,
+                        saveError ? el('div', { className: 'error-banner' }, saveError) : null,
+                        tabContent,
+                        el('div', { className: 'modal-actions' },
+                            el('button', { className: 'btn btn-secondary', onclick: closeModal }, 'Close'),
+                        ),
+                    );
+
+                    // Replace modal content
+                    const existingOverlay = document.querySelector('.modal-overlay');
+                    if (existingOverlay) {
+                        existingOverlay.innerHTML = '';
+                        existingOverlay.appendChild(content);
+                    } else {
+                        showModalOverlay(content);
+                    }
+                }
+
+                function renderUsersTab() {
+                    if (loading) {
+                        return el('p', { style: { color: 'var(--text-muted)', fontSize: '14px' } }, 'Loading users...');
+                    }
+
+                    const currentUserRole = getUserRole();
+
+                    return el('div', null,
+                        el('div', { style: { marginBottom: '12px' } },
+                            (currentUserRole === 'owner' || settings.admins_can_create_users !== false)
+                                ? el('button', { className: 'btn btn-secondary btn-sm', onclick: showCreateUserModal }, '+ Create User')
+                                : null,
+                        ),
+                        renderUsersTable(),
+                    );
+                }
+
+                function renderUsersTable() {
+                    const decoded = decodeToken(getToken());
+                    const currentUsername = decoded ? decoded.username : null;
+                    const currentUserRole = getUserRole();
+                    const showIdColumn = currentUserRole === 'owner' || settings.admins_can_see_user_ids;
+                    const showDeviceInfo = currentUserRole === 'owner' || settings.admins_can_see_device_info;
+                    const showStats = currentUserRole === 'owner' || settings.admins_can_see_stats;
+
+                    const rows = users.map(u => {
+                        const isOwner = u.role === 'owner';
+                        const isLocked = !!u.locked_until;
+                        const isSelf = u.username === currentUsername;
+                        // Hierarchy: admins can only act on users below them
+                        let isHigherRank = false;
+                        if (currentUserRole !== 'owner') {
+                            const currentUserObj = users.find(uu => uu.username === currentUsername);
+                            if (currentUserObj && u.position !== undefined && currentUserObj.position !== undefined) {
+                                isHigherRank = currentUserObj.position > u.position;
+                            }
+                        }
+                        const canModify = !isOwner && !isSelf && !isHigherRank;
+                        const isAdminViewingOwner = currentUserRole === 'admin' && isOwner;
+
+                        const roleBadge = el('span', { className: 'admin-badge ' + u.role }, u.role);
+                        const lockBadge = el('span', { className: 'admin-badge ' + (isLocked ? 'locked' : 'unlocked') },
+                            isLocked ? 'Locked' : 'Unlocked'
+                        );
+
+                        const isOwnerRow = u.role === 'owner';
+                        const isAdminViewing = currentUserRole === 'admin';
+
+                        let lockBtn = null;
+                        let roleBtn = null;
+                        let deleteBtn = null;
+                        let editBtn = null;
+
+                        if (isAdminViewing && isOwnerRow) {
+                            // Placeholder — no buttons shown, but row stays consistent
+                        } else {
+                            lockBtn = el('button', {
+                                className: 'admin-btn-small' + (isLocked ? '' : ' danger'),
+                                disabled: !canModify ? 'disabled' : null,
+                                title: isSelf ? 'Cannot modify yourself' : (isOwner ? 'Cannot modify owner' : (isLocked ? 'Unlock user' : 'Lock user')),
+                                onclick: () => { if (canModify) handleToggleLock(u.id); },
+                            }, isLocked ? 'Unlock' : 'Lock');
+
+                            roleBtn = null;
+                            if (currentUserRole === 'owner') {
+                                roleBtn = el('button', {
+                                    className: 'admin-btn-small',
+                                    disabled: !canModify ? 'disabled' : null,
+                                    title: isSelf ? 'Cannot modify yourself' : (isOwner ? 'Cannot modify owner' : (u.role === 'admin' ? 'Demote to user' : 'Promote to admin')),
+                                    onclick: () => { if (canModify) handleChangeRole(u.id, u.role); },
+                                }, u.role === 'admin' ? 'Demote' : 'Promote');
+                            }
+
+                            if ((currentUserRole === 'owner' || settings.admins_can_delete_users !== false) && !isSelf && !isHigherRank) {
+                                deleteBtn = el('button', {
+                                    className: 'admin-btn-small danger',
+                                    disabled: !canModify ? 'disabled' : null,
+                                    title: isHigherRank ? 'Cannot manage users above you in hierarchy' : 'Delete user',
+                                    onclick: () => handleDeleteUser(u.id, u.username),
+                                }, 'Delete');
+                            }
+
+                            if (currentUserRole === 'owner' || (currentUserRole === 'admin' && settings.admins_can_edit_users)) {
+                                editBtn = el('button', {
+                                    className: 'admin-btn-small',
+                                    title: 'Edit user',
+                                    onclick: () => showEditUserModal(u),
+                                }, '\u270E');
+                            }
+                        }
+
+                        const row = el('tr', { 'data-user-id': String(u.id) },
+                            showIdColumn ? el('td', { style: { fontSize: '12px', color: 'var(--text-muted)' } }, String(u.id)) : null,
+                            el('td', null, u.role === 'owner' ? 'Owner' : u.username),
+                            el('td', null, u.display_name || '\u2014'),
+                            el('td', null, roleBadge),
+                            el('td', null, lockBadge),
+                            el('td', { style: { fontSize: '11px' } },
+                                el('span', { style: { display: 'inline-flex', alignItems: 'center', gap: '4px' }, title: (getUserStatus(u.last_active_at, u.last_logout_at).tooltip || u.last_active_at || 'Never active') },
+                                    el('span', { className: 'status-dot ' + getUserStatus(u.last_active_at, u.last_logout_at).cls }),
+                                    getUserStatus(u.last_active_at, u.last_logout_at).label,
+                                ),
+                            ),
+                            showDeviceInfo ? el('td', { style: { fontSize: '12px', color: 'var(--text-muted)' } }, u.last_ip || '') : null,
+                            showDeviceInfo ? el('td', { style: { fontSize: '12px', color: 'var(--text-muted)' }, title: u.last_user_agent || '' }, parseUserAgent(u.last_user_agent)) : null,
+                            showStats ? el('td', { style: { fontSize: '12px', color: 'var(--text-muted)' } }, (u.total_words || 0).toLocaleString()) : null,
+                            showStats ? el('td', { style: { fontSize: '12px', color: 'var(--text-muted)' } }, (u.total_tokens || 0).toLocaleString()) : null,
+                            showStats ? el('td', { style: { fontSize: '12px', color: 'var(--text-muted)' } }, ((u.total_chars || 0) / 1024).toFixed(1) + ' KB') : null,
+                            el('td', { style: { whiteSpace: 'nowrap', verticalAlign: 'middle' } },
+                                (isAdminViewing && isOwnerRow) ? el('span', { style: { color: 'var(--text-muted)', fontSize: '13px', padding: '4px 10px', display: 'inline-block' } }, '\u2014') : null,
+                                lockBtn,
+                                roleBtn,
+                                editBtn,
+                                deleteBtn,
+                            ),
+                        );
+                        if (currentUserRole === 'owner' && !isSelf) {
+                            row.setAttribute('draggable', 'true');
+                        }
+                        return row;
+                    });
+
+                    const tableId = 'admin-users-table';
+                    const isOwner = currentUserRole === 'owner';
+
+                    const table = el('table', { className: 'admin-users-table', id: tableId },
+                        el('thead', null,
+                            el('tr', null,
+                                showIdColumn ? el('th', null, 'ID') : null,
+                                el('th', null, 'Username'),
+                                el('th', null, 'Display Name'),
+                                el('th', null, 'Role'),
+                                el('th', null, 'Access'),
+                                el('th', null, 'Activity'),
+                                showDeviceInfo ? el('th', null, 'Last IP') : null,
+                                showDeviceInfo ? el('th', null, 'Device') : null,
+                                showStats ? el('th', null, 'Words') : null,
+                                showStats ? el('th', null, 'Tokens') : null,
+                                showStats ? el('th', null, 'Size') : null,
+                                el('th', null, 'Actions'),
+                            ),
+                        ),
+                        el('tbody', null, ...rows),
+                    );
+
+                    // Add drag-and-drop for owner
+                    if (isOwner) {
+                        let draggedRowId = null;
+                        const tbody = table.querySelector('tbody');
+
+                        tbody.addEventListener('dragstart', (e) => {
+                            const row = e.target.closest('tr');
+                            if (row) {
+                                draggedRowId = row.dataset.userId;
+                                e.dataTransfer.setData('text/plain', draggedRowId);
+                                row.classList.add('drag-source');
+                            }
+                        });
+
+                        tbody.addEventListener('dragover', (e) => {
+                            e.preventDefault();
+                            const targetRow = e.target.closest('tr');
+                            if (targetRow && targetRow.dataset.userId !== draggedRowId) {
+                                targetRow.classList.add('drag-over');
+                            }
+                        });
+
+                        tbody.addEventListener('dragleave', (e) => {
+                            const targetRow = e.target.closest('tr');
+                            if (targetRow) {
+                                targetRow.classList.remove('drag-over');
+                            }
+                        });
+
+                        tbody.addEventListener('drop', (e) => {
+                            e.preventDefault();
+                            const targetRow = e.target.closest('tr');
+                            if (!targetRow || targetRow.dataset.userId === draggedRowId) return;
+
+                            // Remove visual indicators
+                            tbody.querySelectorAll('.drag-source, .drag-over').forEach(el => {
+                                el.classList.remove('drag-source', 'drag-over');
+                            });
+
+                            // Collect current DOM order
+                            const rowsArr = [...tbody.querySelectorAll('tr')];
+                            const draggedRow = tbody.querySelector(`tr[data-user-id="${draggedRowId}"]`);
+                            if (!draggedRow) return;
+
+                            // Move the dragged row before/after the target
+                            const targetRect = targetRow.getBoundingClientRect();
+                            const mouseY = e.clientY;
+                            const insertBefore = mouseY < targetRect.top + targetRect.height / 2;
+
+                            if (insertBefore) {
+                                tbody.insertBefore(draggedRow, targetRow);
+                            } else {
+                                tbody.insertBefore(draggedRow, targetRow.nextSibling);
+                            }
+
+                            // Build new order from DOM
+                            const newOrder = [...tbody.querySelectorAll('tr')].map(tr => parseInt(tr.dataset.userId));
+
+                            // Ensure owner is always first in the order
+                            const ownerUser = users.find(u => u.role === 'owner');
+                            let orderToSend = newOrder;
+                            if (ownerUser) {
+                                orderToSend = [ownerUser.id, ...newOrder.filter(id => id !== ownerUser.id)];
+                                // If the order changed, re-sort the DOM
+                                if (orderToSend[0] !== newOrder[0]) {
+                                    // Move owner row to top in DOM
+                                    const ownerRow = tbody.querySelector(`tr[data-user-id="${ownerUser.id}"]`);
+                                    if (ownerRow) {
+                                        tbody.insertBefore(ownerRow, tbody.firstChild);
+                                    }
+                                }
+                            }
+
+                            // Send to backend
+                            apiPut('/api/admin/users/reorder', { order: orderToSend })
+                                .then(() => loadData())
+                                .catch(err => {
+                                    loadError = err.message;
+                                    renderModal();
+                                });
+                        });
+
+                        tbody.addEventListener('dragend', () => {
+                            tbody.querySelectorAll('.drag-source, .drag-over').forEach(el => {
+                                el.classList.remove('drag-source', 'drag-over');
+                            });
+                            draggedRowId = null;
+                        });
+                    }
+
+                    return el('div', { style: { overflowX: 'auto' } }, table);
+                }
+
+                function showCreateUserModal() {
+                    let modalError = '';
+                    let username = '';
+                    let password = '';
+                    let submitting = false;
+
+                    function onSubmit() {
+                        if (!username.trim() || !password) {
+                            modalError = 'Username and password are required.';
+                            renderModalContent();
+                            return;
+                        }
+                        submitting = true;
+                        modalError = '';
+                        renderModalContent();
+
+                        apiPost('/api/admin/users', { username: username.trim(), password: password })
+                            .then(() => {
+                                closeModal();
+                                loadData();
+                            })
+                            .catch(err => {
+                                submitting = false;
+                                modalError = err.message;
+                                renderModalContent();
+                            });
+                    }
+
+                    function renderModalContent() {
+                        const content = el('div', { className: 'modal' },
+                            el('h2', null, 'Create User'),
+                            modalError ? el('p', { className: 'modal-error' }, modalError) : null,
+                            el('div', { className: 'form-group' },
+                                el('label', { htmlFor: 'admin-create-username' }, 'Username'),
+                                el('input', {
+                                    id: 'admin-create-username',
+                                    type: 'text',
+                                    value: username,
+                                    oninput: (e) => { username = e.target.value; },
+                                }),
+                            ),
+                            el('div', { className: 'form-group' },
+                                el('label', { htmlFor: 'admin-create-password' }, 'Password'),
+                                el('input', {
+                                    id: 'admin-create-password',
+                                    type: 'password',
+                                    value: password,
+                                    oninput: (e) => { password = e.target.value; },
+                                }),
+                            ),
+                            el('div', { className: 'modal-actions' },
+                                el('button', { className: 'btn btn-secondary', onclick: renderModal }, 'Cancel'),
+                                el('button', {
+                                    className: 'btn btn-primary',
+                                    onclick: onSubmit,
+                                    disabled: submitting ? 'disabled' : null,
+                                }, submitting ? 'Creating...' : 'Create'),
+                            ),
+                        );
+
+                        const existingOverlay = document.querySelector('.modal-overlay');
+                        if (existingOverlay) {
+                            existingOverlay.innerHTML = '';
+                            existingOverlay.appendChild(content);
+                        } else {
+                            showModalOverlay(content);
+                        }
+                    }
+
+                    renderModalContent();
+                }
+
+                function renderSettingsTab() {
+                    return el('div', { className: 'admin-settings-form' },
+                        el('div', { className: 'form-group' },
+                            el('label', { htmlFor: 'lockout-threshold' }, 'Failed login attempts before lockout'),
+                            el('input', {
+                                id: 'lockout-threshold',
+                                type: 'number',
+                                min: '1',
+                                value: settings.lockout_threshold,
+                            }),
+                        ),
+                        el('div', { className: 'form-group' },
+                            el('label', { htmlFor: 'lockout-duration' }, 'Lockout duration (minutes)'),
+                            el('input', {
+                                id: 'lockout-duration',
+                                type: 'number',
+                                min: '1',
+                                value: settings.lockout_duration_minutes,
+                            }),
+                        ),
+                        el('div', { className: 'form-group' },
+                            el('label', { htmlFor: 'jwt-expiry' }, 'JWT expiry (days)'),
+                            el('input', {
+                                id: 'jwt-expiry',
+                                type: 'number',
+                                min: '1',
+                                disabled: settings.session_only ? 'disabled' : null,
+                                value: settings.jwt_expiry_days || 30,
+                            }),
+                            settings.session_only
+                                ? el('p', { style: { fontSize: '11px', color: 'var(--text-muted)', margin: '4px 0 0 0' } },
+                                    'Ignored when session-only is enabled \u2013 token is stored in session storage (cleared on browser close).')
+                                : null,
+                        ),
+                        el('div', { className: 'form-group' },
+                            el('label', null,
+                                el('input', {
+                                    id: 'session-only',
+                                    type: 'checkbox',
+                                    checked: settings.session_only ? 'checked' : null,
+                                    style: { marginRight: '8px' },
+                                    onchange: (e) => {
+                                        settings.session_only = e.target.checked;
+                                        renderModal();
+                                    },
+                                }),
+                                'Log out on browser close (no persistent sessions)',
+                            ),
+                        ),
+                        el('div', { className: 'form-group' },
+                            el('label', null,
+                                el('input', {
+                                    id: 'admins-can-create-users',
+                                    type: 'checkbox',
+                                    checked: settings.admins_can_create_users !== false ? 'checked' : null,
+                                    style: { marginRight: '8px' },
+                                }),
+                                'Allow admins to create users',
+                            ),
+                        ),
+                        el('div', { className: 'form-group' },
+                            el('label', null,
+                                el('input', {
+                                    id: 'admins-can-delete-users',
+                                    type: 'checkbox',
+                                    checked: settings.admins_can_delete_users !== false ? 'checked' : null,
+                                    style: { marginRight: '8px' },
+                                }),
+                                'Allow admins to delete users',
+                            ),
+                        ),
+                        el('div', { className: 'form-group' },
+                            el('label', null,
+                                el('input', {
+                                    id: 'admins-can-see-user-ids',
+                                    type: 'checkbox',
+                                    checked: settings.admins_can_see_user_ids ? 'checked' : null,
+                                    style: { marginRight: '8px' },
+                                }),
+                                'Allow admins to see user IDs',
+                            ),
+                        ),
+                        el('div', { className: 'form-group' },
+                            el('label', null,
+                                el('input', {
+                                    id: 'admins-can-see-device-info',
+                                    type: 'checkbox',
+                                    checked: settings.admins_can_see_device_info ? 'checked' : null,
+                                    style: { marginRight: '8px' },
+                                }),
+                                'Allow admins to see user device info',
+                            ),
+                        ),
+                        el('div', { className: 'form-group' },
+                            el('label', null,
+                                el('input', {
+                                    id: 'admins-can-see-stats',
+                                    type: 'checkbox',
+                                    checked: settings.admins_can_see_stats ? 'checked' : null,
+                                    style: { marginRight: '8px' },
+                                }),
+                                'Allow admins to see user statistics',
+                            ),
+                        ),
+                        el('div', { className: 'form-group' },
+                            el('label', null,
+                                el('input', {
+                                    id: 'admins-can-edit-users',
+                                    type: 'checkbox',
+                                    checked: settings.admins_can_edit_users ? 'checked' : null,
+                                    style: { marginRight: '8px' },
+                                }),
+                                'Allow admins to edit users',
+                            ),
+                        ),
+                        el('div', { className: 'form-group' },
+                            el('label', null,
+                                el('input', {
+                                    id: 'admins-can-see-logs',
+                                    type: 'checkbox',
+                                    checked: settings.admins_can_see_logs ? 'checked' : null,
+                                    style: { marginRight: '8px' },
+                                }),
+                                'Allow admins to see audit logs',
+                            ),
+                        ),
+                        el('p', { style: { fontSize: '12px', color: 'var(--text-muted)', margin: '0 0 8px 0' } },
+                            'Changes apply to new logins only. Existing sessions will remain valid until their token expires.'),
+                        el('button', {
+                            className: 'btn btn-primary',
+                            onclick: handleSaveSettings,
+                            disabled: saving ? 'disabled' : null,
+                        }, saving ? 'Saving...' : 'Save Settings'),
+                    );
+                }
+
+                function renderTokensTab() {
+                    if (tokensLoading) {
+                        return el('p', { style: { color: 'var(--text-muted)', fontSize: '14px' } }, 'Loading tokens...');
+                    }
+
+                    const rows = tokens.map(u => {
+                        const isSelf = u.id === decodeToken(getToken()).id;
+                        const revokeBtn = el('button', {
+                            className: 'admin-btn-small danger',
+                            disabled: isSelf ? 'disabled' : null,
+                            title: isSelf ? 'Cannot revoke your own token here (use Revoke All)' : 'Revoke token for this user',
+                            onclick: () => {
+                                showInlineConfirm(
+                                    'Revoke token for "' + u.username + '"? This will force them to log in again.',
+                                    () => {
+                                        apiPost('/api/admin/tokens/revoke/' + u.id, {})
+                                            .then(() => loadData())
+                                            .catch(err => { loadError = err.message; renderModal(); });
+                                    }
+                                );
+                            },
+                        }, 'Revoke');
+
+                        return el('tr', null,
+                            el('td', null, u.role === 'owner' ? 'Owner' : u.username),
+                            el('td', null, el('span', { className: 'admin-badge ' + u.role }, u.role)),
+                            el('td', null, String(u.token_version)),
+                            el('td', null, revokeBtn),
+                        );
+                    });
+
+                    return el('div', null,
+                        el('table', { className: 'admin-users-table', style: { marginBottom: '16px' } },
+                            el('thead', null,
+                                el('tr', null,
+                                    el('th', null, 'Username'),
+                                    el('th', null, 'Role'),
+                                    el('th', null, 'Token Version'),
+                                    el('th', null, 'Actions'),
+                                ),
+                            ),
+                            el('tbody', null, ...rows),
+                        ),
+                        el('p', { style: { color: 'var(--text-secondary)', fontSize: '14px', marginBottom: '16px' } },
+                            'Revoking all tokens forces every user (including yourself) to log in again.'),
+                        el('button', {
+                            className: 'btn btn-danger',
+                            onclick: () => {
+                                showInlineConfirm(
+                                    'Are you sure you want to revoke all tokens? This forces all users (including yourself) to log in again.',
+                                    () => {
+                                        apiPost('/api/admin/tokens/revoke-all', {})
+                                            .then(() => {
+                                                clearToken();
+                                                closeModal();
+                                                window.location.hash = '#/login';
+                                                router();
+                                            })
+                                            .catch(err => {
+                                                loadError = err.message;
+                                                renderModal();
+                                            });
+                                    }
+                                );
+                            },
+                        }, 'Revoke All Tokens'),
+                    );
+                }
+
+                function renderLogsTab() {
+                    if (logsLoading) {
+                        return el('p', { style: { color: 'var(--text-muted)', fontSize: '14px' } }, 'Loading logs...');
+                    }
+                    if (logsError) {
+                        return el('div', { className: 'error-banner' }, logsError);
+                    }
+                    if (!logs || logs.length === 0) {
+                        return el('p', { style: { color: 'var(--text-muted)', fontSize: '14px' } }, 'No log entries yet.');
+                    }
+
+                    const rows = logs.map(l => el('tr', null,
+                        el('td', { style: { whiteSpace: 'nowrap', fontSize: '12px' } }, (l.timestamp || '').replace('T', ' ').substring(0, 19)),
+                        el('td', null, l.username || ''),
+                        el('td', null, el('span', { className: 'admin-badge user' }, l.action || '')),
+                        el('td', { style: { fontSize: '12px', color: 'var(--text-secondary)' } }, l.details || ''),
+                    ));
+
+                    const totalPages = Math.ceil(logsTotal / 50);
+
+                    const uniqueActions = logsAllActions;
+
+                    const filterBar = el('div', { style: { marginBottom: '12px', display: 'flex', gap: '8px', alignItems: 'center' } },
+                        el('label', { style: { fontSize: '13px', color: 'var(--text-secondary)' } }, 'Filter:'),
+                        el('select', {
+                            id: 'log-action-filter',
+                            style: { background: 'var(--bg-input)', border: '1px solid var(--border-medium)', borderRadius: '4px', color: 'var(--text-primary)', padding: '6px 10px', fontSize: '13px', fontFamily: 'inherit' },
+                            onchange: (e) => {
+                                const val = e.target.value;
+                                loadLogs(1, val);
+                            },
+                        },
+                            el('option', { value: '' }, 'All actions'),
+                            ...uniqueActions.map(a => el('option', { value: a, selected: logsFilterAction === a ? 'selected' : null }, a)),
+                        ),
+                    );
+
+                    return el('div', null,
+                        filterBar,
+                        el('table', { className: 'admin-users-table', style: { fontSize: '12px' } },
+                            el('thead', null,
+                                el('tr', null,
+                                    el('th', null, 'Timestamp'),
+                                    el('th', null, 'User'),
+                                    el('th', null, 'Action'),
+                                    el('th', null, 'Details'),
+                                ),
+                            ),
+                            el('tbody', null, ...rows),
+                        ),
+                        totalPages > 1 ? el('div', { style: { display: 'flex', gap: '8px', alignItems: 'center', marginTop: '12px' } },
+                            el('button', {
+                                className: 'btn btn-secondary btn-xs',
+                                disabled: logsPage <= 1 ? 'disabled' : null,
+                                onclick: () => loadLogs(logsPage - 1),
+                            }, 'Previous'),
+                            el('span', { style: { fontSize: '13px', color: 'var(--text-secondary)' } },
+                                'Page ' + logsPage + ' of ' + totalPages),
+                            el('button', {
+                                className: 'btn btn-secondary btn-xs',
+                                disabled: logsPage >= totalPages ? 'disabled' : null,
+                                onclick: () => loadLogs(logsPage + 1),
+                            }, 'Next'),
+                        ) : null,
+                    );
+                }
+
+                function showEditUserModal(user) {
+                    let modalError = '';
+                    let username = user.username || '';
+                    let displayName = user.display_name || '';
+                    let newPassword = '';
+                    let submitting = false;
+
+                    function onSubmit() {
+                        submitting = true;
+                        modalError = '';
+                        renderContent();
+
+                        const body = {};
+                        if (username !== user.username) body.username = username;
+                        if (displayName !== (user.display_name || '')) body.display_name = displayName;
+                        if (newPassword) body.new_password = newPassword;
+
+                        if (Object.keys(body).length === 0) {
+                            submitting = false;
+                            modalError = 'No changes to save.';
+                            renderContent();
+                            return;
+                        }
+
+                        apiPatch('/api/admin/users/' + user.id, body)
+                            .then(() => {
+                                closeModal();
+                                loadData();
+                            })
+                            .catch(err => {
+                                submitting = false;
+                                modalError = err.message;
+                                renderContent();
+                            });
+                    }
+
+                    function renderContent() {
+                        const content = el('div', { className: 'modal' },
+                            el('h2', null, 'Edit User: ' + (user.role === 'owner' ? 'Owner' : user.username)),
+                            modalError ? el('p', { className: 'modal-error' }, modalError) : null,
+                            el('div', { className: 'form-group' },
+                                el('label', { htmlFor: 'edit-user-username' }, 'Username'),
+                                el('input', {
+                                    id: 'edit-user-username',
+                                    type: 'text',
+                                    value: username,
+                                    oninput: (e) => { username = e.target.value; },
+                                }),
+                            ),
+                            el('div', { className: 'form-group' },
+                                el('label', { htmlFor: 'edit-user-display-name' }, 'Display Name'),
+                                el('input', {
+                                    id: 'edit-user-display-name',
+                                    type: 'text',
+                                    value: displayName,
+                                    oninput: (e) => { displayName = e.target.value; },
+                                }),
+                            ),
+                            el('div', { className: 'form-group' },
+                                el('label', { htmlFor: 'edit-user-password' }, 'New Password (leave blank to keep current)'),
+                                el('input', {
+                                    id: 'edit-user-password',
+                                    type: 'password',
+                                    value: newPassword,
+                                    oninput: (e) => { newPassword = e.target.value; },
+                                }),
+                            ),
+                            el('div', { className: 'modal-actions' },
+                                el('button', { className: 'btn btn-secondary', onclick: renderModal }, 'Cancel'),
+                                el('button', {
+                                    className: 'btn btn-primary',
+                                    onclick: onSubmit,
+                                    disabled: submitting ? 'disabled' : null,
+                                }, submitting ? 'Saving...' : 'Save'),
+                            ),
+                        );
+
+                        const existingOverlay = document.querySelector('.modal-overlay');
+                        if (existingOverlay) {
+                            existingOverlay.innerHTML = '';
+                            existingOverlay.appendChild(content);
+                        } else {
+                            showModalOverlay(content);
+                        }
+                    }
+
+                    renderContent();
+                }
+
+                loadData();
+            }
+
+            // ─── My Account Modal ───────────────────────────────────
+            function openMyAccountModal() {
+                let loading = true;
+                let profile = null;
+                let errorText = '';
+                let successText = '';
+                let saving = false;
+                let displayName = '';
+                let newPassword = '';
+                let confirmPassword = '';
+
+                function loadProfile() {
+                    loading = true;
+                    errorText = '';
+                    apiGet('/api/user/profile')
+                        .then(data => {
+                            profile = data;
+                            displayName = data.display_name || '';
+                            loading = false;
+                            renderContent();
+                        })
+                        .catch(err => {
+                            loading = false;
+                            errorText = err.message;
+                            renderContent();
+                        });
+                }
+
+                function handleSave(e) {
+                    e.preventDefault();
+                    if (newPassword && newPassword !== confirmPassword) {
+                        errorText = 'Passwords do not match.';
+                        renderContent();
+                        return;
+                    }
+                    saving = true;
+                    errorText = '';
+                    successText = '';
+                    renderContent();
+
+                    const body = { display_name: displayName };
+                    if (newPassword) body.new_password = newPassword;
+
+                    apiPatch('/api/user/profile', body)
+                        .then(data => {
+                            saving = false;
+                            successText = 'Profile updated.';
+                            if (data.token) {
+                                const decoded = decodeToken(data.token);
+                                setToken(data.token, decoded && decoded.token_version !== undefined);
+                            }
+                            newPassword = '';
+                            confirmPassword = '';
+                            loadProfile();
+                        })
+                        .catch(err => {
+                            saving = false;
+                            errorText = err.message;
+                            renderContent();
+                        });
+                }
+
+                function renderContent() {
+                    const content = el('div', { className: 'modal' },
+                        el('h2', null, 'My Account'),
+                        loading ? el('p', { style: { color: 'var(--text-muted)' } }, 'Loading...') :
+                        errorText ? el('p', { className: 'modal-error' }, errorText) : null,
+                        successText ? el('p', { style: { color: 'var(--success)', fontSize: '13px', marginBottom: '12px' } }, successText) : null,
+                        profile ? el('form', { className: 'auth-form', onsubmit: handleSave },
+                            el('div', { className: 'form-group' },
+                                el('label', null, 'Username'),
+                                el('input', { type: 'text', value: profile.username || '', disabled: 'disabled' }),
+                            ),
+                            el('div', { className: 'form-group' },
+                                el('label', { htmlFor: 'profile-display-name' }, 'Display Name'),
+                                el('input', {
+                                    id: 'profile-display-name',
+                                    type: 'text',
+                                    value: displayName,
+                                    oninput: (e) => { displayName = e.target.value; },
+                                }),
+                            ),
+                            el('div', { className: 'form-group' },
+                                el('label', { htmlFor: 'profile-new-password' }, 'New Password (leave blank to keep current)'),
+                                el('input', {
+                                    id: 'profile-new-password',
+                                    type: 'password',
+                                    value: newPassword,
+                                    oninput: (e) => { newPassword = e.target.value; },
+                                    autocomplete: 'new-password',
+                                }),
+                            ),
+                            el('div', { className: 'form-group' },
+                                el('label', { htmlFor: 'profile-confirm-password' }, 'Confirm New Password'),
+                                el('input', {
+                                    id: 'profile-confirm-password',
+                                    type: 'password',
+                                    value: confirmPassword,
+                                    oninput: (e) => { confirmPassword = e.target.value; },
+                                    autocomplete: 'new-password',
+                                }),
+                            ),
+                            el('div', { className: 'modal-actions' },
+                                el('button', { type: 'button', className: 'btn btn-secondary', onclick: closeModal }, 'Close'),
+                                el('button', { type: 'submit', className: 'btn btn-primary', disabled: saving ? 'disabled' : null },
+                                    saving ? 'Saving...' : 'Save'),
+                            ),
+                        ) : null,
+                    );
+                    const existingOverlay = document.querySelector('.modal-overlay');
+                    if (existingOverlay) { existingOverlay.remove(); }
+                    showModalOverlay(content);
+                }
+
+                loadProfile();
             }
 
             // ─── Status Bar ──────────────────────────────────────────
@@ -2292,27 +3623,111 @@
             }
 
             function showTutorialModal() {
-                const content = el('div', { className: 'modal tutorial-modal' },
-                    el('h2', null, 'Getting Started with Chronicle Architect'),
-                    el('h3', null, '\uD83D\uDCD6 Creating Projects & Volumes'),
-                    el('p', null, 'Projects are your books or stories. Each project can contain multiple ', el('strong', null, 'Volumes'), ' (like books in a series) and ', el('strong', null, 'Chapters'), '. Create a project, then add volumes to organize your chapters hierarchically.'),
-                    el('h3', null, '\u270D\uFE0F Using the Editor'),
-                    el('p', null, 'The rich text editor supports ', el('strong', null, 'bold'), ', ', el('em', null, 'italic'), ', ', el('u', null, 'underline'), ', ', el('s', null, 'strikethrough'), ', headings, lists, blockquotes, text colour, and font selection. Your writing auto-saves as you type. The word, character, and token counters help you track your progress.'),
-                    el('h3', null, '\uD83D\uDCDA The Wiki'),
-                    el('p', null, 'Build a worldbuilding wiki for each project. Create entries with categories (Characters, Locations, Items, etc.) and link them. Wiki names mentioned in your chapters are automatically detected and shown in the references panel below the editor.'),
-                    el('h3', null, '\uD83E\uDD16 AI Features (Coming Soon)'),
-                    el('p', null, 'Future versions will support connecting to AI assistants for brainstorming, editing suggestions, and worldbuilding help \u2014 all while keeping your writing private and self-hosted.'),
-                    el('h3', null, '\uD83D\uDCA1 Tips'),
-                    el('ul', null,
-                        el('li', null, 'Use the sidebar toggle (\u2630) to collapse the sidebar for distraction-free writing'),
-                        el('li', null, 'Chapter titles are inline-editable \u2014 just click the rename icon'),
-                        el('li', null, 'The status bar at the bottom shows connection status, last save time, and the app version'),
+                const tabs = [
+                    { id: 'welcome', label: 'Welcome' },
+                    { id: 'projects', label: 'Projects & Volumes' },
+                    { id: 'editor', label: 'Editor' },
+                    { id: 'wiki', label: 'Wiki' },
+                    { id: 'ai', label: 'AI Features' },
+                    { id: 'admin', label: 'Admin Features' },
+                    { id: 'tips', label: 'Tips' },
+                ];
+
+                // ── Tab panels ──────────────────────────────────────
+                const panels = {
+                    welcome: el('div', { className: 'help-tab-panel' },
+                        el('h2', null, 'Welcome to Chronicle Architect'),
+                        el('p', null, 'Chronicle Architect is a self-hosted novel-writing app designed for writers who want full control over their creative process. Organise your work into projects, volumes, and chapters, build a world-building wiki, and write with a distraction-free rich text editor.'),
+                        el('p', null, 'Your data stays on your server. No tracking, no ads, no AI surveillance. Future updates will bring optional AI assistance that keeps your writing private.'),
                     ),
-                    el('div', { className: 'modal-actions' },
-                        el('button', { className: 'btn btn-primary', onclick: () => closeModal() }, 'Got it!'),
+                    projects: el('div', { className: 'help-tab-panel' },
+                        el('h2', null, 'Projects & Volumes'),
+                        el('p', null, 'Create a new project for each story or book series. Inside a project, add volumes (like books in a series) and chapters. Volumes help you structure your narrative. You can drag-and-drop chapters between volumes to reorder them.'),
+                        el('p', null, 'The project card on the homepage shows your word and token counts. Click on a project to enter its workspace and see the chapter list on the left.'),
+                    ),
+                    editor: el('div', { className: 'help-tab-panel' },
+                        el('h2', null, 'The Editor'),
+                        el('p', null, 'The rich text editor supports bold, italic, underline, strikethrough, headings (H1\u2013H3), bullet and ordered lists, blockquotes, text colour, font selection, and alignment.'),
+                        el('p', null, 'Your writing is auto-saved every few seconds \u2014 the status bar shows when the last save occurred. Live word, character, and token counters sit in the top-right corner.'),
+                        el('p', null, 'Use the collapsible sidebar (\u2630) to hide the chapter list for full-screen writing.'),
+                    ),
+                    wiki: el('div', { className: 'help-tab-panel' },
+                        el('h2', null, 'The Wiki'),
+                        el('p', null, 'Each project has its own world-building wiki. Create entries under categories like Characters, Locations, Items, Factions, and Lore, or add custom categories.'),
+                        el('p', null, 'Entries can contain subcategories (e.g., Appearance, Personality) and you can save a default template for each category.'),
+                        el('p', null, 'The AI Context Snippet lets you write a plain-text summary that can be fed to future AI features. The Private Notepad is your personal rich-text scratchpad \u2014 it\u2019s never shared.'),
+                        el('p', null, 'When a wiki entry name appears in your chapter, it\u2019s automatically detected and linked in the References panel below the editor.'),
+                    ),
+                    ai: el('div', { className: 'help-tab-panel' },
+                        el('h2', null, 'AI Features'),
+                        el('p', null, 'Upcoming versions will offer optional AI integration (OpenAI, Anthropic, local models via Ollama) for brainstorming, editing suggestions, and world-building help.'),
+                        el('p', null, 'All AI features are designed with privacy in mind: you choose what context is sent, and your writing never leaves your server unless you explicitly connect an external API.'),
+                    ),
+                    admin: el('div', { className: 'help-tab-panel' },
+                        el('h2', null, 'Admin Features'),
+                        el('p', null, 'The Admin Panel is accessible to both the Owner and Admins, but the Owner can fine-tune what actions admins are allowed to perform.'),
+                        el('p', null, 'From the Settings tab of the Admin Panel, the Owner can enable or disable admin abilities such as creating users, deleting users, editing user details, viewing activity logs, and seeing detailed user statistics.'),
+                        el('p', null, 'A drag-and-drop hierarchy in the Users tab lets the Owner reorder users. Users can only manage other users who are below them in this list \u2014 admins cannot modify users ranked above them.'),
+                        el('p', null, 'The Owner can also configure security settings like failed-login lockout thresholds, JWT expiry, and session-only logins.'),
+                    ),
+                    tips: el('div', { className: 'help-tab-panel' },
+                        el('h2', null, 'Tips'),
+                        el('p', null, '\u2022 Drag-and-drop chapters between volumes to reorder them.'),
+                        el('p', null, '\u2022 Click the rename icon (pencil) next to a volume or chapter title to rename it inline.'),
+                        el('p', null, '\u2022 Use the status bar to check connection health and the last save time.'),
+                        el('p', null, '\u2022 Your first registered account is the Owner \u2014 only the Owner can access every setting, but they can delegate certain powers to Admins.'),
+                    ),
+                };
+
+                // ── Build tab bar ────────────────────────────────────
+                let activeTab = 'welcome';
+
+                function renderTabBar() {
+                    return el('div', { className: 'help-tabs' },
+                        ...tabs.map(t => {
+                            const isActive = t.id === activeTab;
+                            return el('button', {
+                                className: 'help-tab' + (isActive ? ' active' : ''),
+                                'data-tab': t.id,
+                                onclick: function () {
+                                    if (activeTab === t.id) return;
+                                    activeTab = t.id;
+                                    // Update tab button styles
+                                    const allTabs = tabContainer.querySelectorAll('.help-tab');
+                                    allTabs.forEach(btn => btn.classList.remove('active'));
+                                    this.classList.add('active');
+                                    // Update panel visibility
+                                    const allPanels = contentArea.querySelectorAll('.help-tab-panel');
+                                    allPanels.forEach(p => p.classList.remove('active'));
+                                    const targetPanel = contentArea.querySelector('.help-tab-panel[data-tab="' + t.id + '"]');
+                                    if (targetPanel) targetPanel.classList.add('active');
+                                },
+                            }, t.label);
+                        }),
+                    );
+                }
+
+                // ── Build content area ───────────────────────────────
+                const contentArea = el('div', { className: 'help-tab-content' },
+                    ...tabs.map(t => {
+                        const panel = panels[t.id];
+                        panel.setAttribute('data-tab', t.id);
+                        if (t.id === 'welcome') panel.classList.add('active');
+                        return panel;
+                    }),
+                );
+
+                // ── Assemble modal ───────────────────────────────────
+                const tabContainer = renderTabBar();
+                const modalBody = el('div', { className: 'modal help-modal' },
+                    tabContainer,
+                    contentArea,
+                    el('div', { className: 'modal-actions', style: { marginTop: '16px' } },
+                        el('button', { className: 'btn btn-secondary', onclick: () => closeModal() }, 'Close'),
                     ),
                 );
-                showModalOverlay(content);
+
+                showModalOverlay(modalBody);
             }
 
             // ─── Auto-show tutorial on first registration ─────────────
@@ -2560,7 +3975,7 @@
 
                     apiPost('/api/register', { username, password })
                         .then(data => {
-                            setToken(data.token);
+                            setToken(data.token, data.session_only);
                             window.location.hash = '#/projects';
                             router();
                         })
@@ -2607,6 +4022,17 @@
             // ─── Login Page ──────────────────────────────────────────
             function renderLoginPage() {
                 let errorText = '';
+                let showRegisterLink = false;
+
+                function checkSetup() {
+                    fetch('/api/check_setup')
+                        .then(r => r.json())
+                        .then(data => {
+                            showRegisterLink = data.setup_required;
+                            render();
+                        })
+                        .catch(() => {});
+                }
 
                 function onLogin(e) {
                     e.preventDefault();
@@ -2622,7 +4048,7 @@
 
                     apiPost('/api/login', { username, password })
                         .then(data => {
-                            setToken(data.token);
+                            setToken(data.token, data.session_only);
                             window.location.hash = '#/projects';
                             router();
                         })
@@ -2650,8 +4076,8 @@
                                 el('button', { type: 'submit', className: 'btn btn-primary' }, 'Log in'),
                             ),
                             el('p', { className: 'auth-link' },
-                                "Don't have an account? ",
-                                el('a', { href: '#/register' }, 'Register'),
+                                showRegisterLink ? "Don't have an account? " : '',
+                                showRegisterLink ? el('a', { href: '#/register' }, 'Register') : null,
                             ),
                         )
                     );
@@ -2659,6 +4085,7 @@
                 }
 
                 render();
+                checkSetup();
             }
 
             // ─── Projects Page ───────────────────────────────────────
@@ -2704,6 +4131,16 @@
                 }
 
                 function handleLogout() {
+                    // Post logout to server BEFORE clearing token
+                    const token = getToken();
+                    if (token) {
+                        // Fire-and-forget logout API call
+                        fetch('/api/logout', {
+                            method: 'POST',
+                            headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+                            body: '{}',
+                        }).catch(() => {});
+                    }
                     clearToken();
                     hideStatusBar();
                     window.location.hash = '#/login';
@@ -2872,6 +4309,10 @@
                                     modalError = '';
                                     render();
                                 } }, '+ New Project'),
+                                (getUserRole() === 'admin' || getUserRole() === 'owner')
+                                    ? el('button', { className: 'btn btn-secondary', onclick: openAdminPanel }, 'Admin')
+                                    : null,
+                                el('button', { className: 'btn btn-secondary', onclick: openMyAccountModal }, 'My Account'),
                                 el('button', { className: 'btn btn-danger', onclick: handleLogout }, 'Logout'),
                             ),
                         ),
@@ -3862,16 +5303,7 @@
 
                     sidebarInner.innerHTML = '';
 
-                    // Project title (inline editable on double-click)
-                    const projectTitleText = project ? project.title : 'Loading...';
-                    const projectTitleEl = el('h3', { className: 'sidebar-project-title' },
-                        el('span', {
-                            className: 'project-title-text',
-                            ondblclick: () => { if (project) startProjectTitleEdit(project.title || ''); },
-                        }, projectTitleText),
-                    );
-                    sidebarInner.appendChild(projectTitleEl);
-
+                    // Project title is now rendered in #sidebar-header above
                     // Structure header
                     sidebarInner.appendChild(el('div', { className: 'sidebar-section-header' }, 'Structure'));
 
@@ -4413,6 +5845,14 @@
                         el('div', { className: 'editor-layout' },
                             el('div', { id: 'editor-sidebar', className: 'sidebar' + (sidebarCollapsed ? ' collapsed' : '') },
                                 el('button', { className: 'sidebar-toggle', onclick: toggleSidebar, title: 'Toggle sidebar' }, '\u2630'),
+                                el('div', { id: 'sidebar-header', className: 'sidebar-header' },
+                                    el('h3', { className: 'sidebar-project-title' },
+                                        el('span', {
+                                            className: 'project-title-text',
+                                            ondblclick: () => { if (project) startProjectTitleEdit(project.title || ''); },
+                                        }, project ? project.title : 'Loading...'),
+                                    ),
+                                ),
                                 el('div', { id: 'sidebar-inner', className: 'sidebar-inner' }),
                             ),
                             el('div', { className: 'editor-main' },

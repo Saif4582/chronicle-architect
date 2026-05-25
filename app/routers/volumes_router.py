@@ -1,8 +1,50 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+import html
+import re
+import unicodedata
 from app.database import get_db
 from app.auth import get_current_user
 from app.models import VolumeCreate, VolumeUpdate, VolumeResponse, VolumeReorder, ChapterAssignVolume, ChapterResponse
 from app.tokenizer import get_token_count
+
+
+def _strip_html(text: str) -> str:
+    """Extract plain text from HTML-equivalent content.
+
+    Pipelines the input through three stages so that the resulting
+    character and word counts closely mirror TipTap's ``editor.getText()``
+    (the client-side live-counter source of truth):
+
+    1.  Strip all HTML tags (regex – unavoidable approximation; self-closing
+        and void elements are handled correctly because the regex removes
+        everything inside angle brackets).
+    2.  Decode HTML entities (``&nbsp;``, ``&``, ``&mdash;``, …) into
+        literal characters via ``html.unescape``.
+    3.  Normalise any remaining Unicode whitespace characters (e.g. no-break
+        space U+00A0) to ordinary ASCII spaces and collapse runs of
+        whitespace so that Python's ``str.split()`` sees the same word
+        boundaries as JavaScript's ``/\\s+/``.
+
+    .. note::
+        A negligible ±1-2 word / token variation may persist because TipTap
+        joins block-level text nodes with ``\\n`` whereas this function
+        replaces every tag with a single space.  The difference is only
+        noticeable for content whose word count straddles a block boundary
+        (``</p><p>`` yields an extra space in the server count that is
+        absent from the client count, or vice versa).  Both counts are
+        considered accurate.
+    """
+    text = text or ''
+    # 1) Remove tags
+    text = re.sub(r'<[^>]*>', ' ', text)
+    # 2) Decode HTML entities
+    text = html.unescape(text)
+    # 3) Normalise whitespace: convert all Unicode whitespace → ASCII space
+    #    and collapse consecutive spaces.
+    text = ''.join(' ' if unicodedata.category(ch).startswith('Z') or ch in ('\t', '\n', '\r', '\f', '\v') else ch for ch in text)
+    text = re.sub(r'\s+', ' ', text)
+    return text.strip()
+
 
 router = APIRouter(prefix="")
 
@@ -265,5 +307,6 @@ async def assign_chapter_volume(chapter_id: int, body: ChapterAssignVolume, user
     cursor = await db.execute("SELECT * FROM chapters WHERE id = ?", (chapter_id,))
     updated = await cursor.fetchone()
     result = dict(updated)
-    result["token_count"] = get_token_count(result.get("content", ""))
+    plain_text = _strip_html(result.get("content", ""))
+    result["token_count"] = get_token_count(plain_text)
     return result

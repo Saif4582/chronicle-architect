@@ -2,18 +2,57 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from app.database import get_db
 from app.auth import get_current_user
 from app.models import ProjectCreate, ProjectUpdate, ProjectResponse
-from app.tokenizer import get_token_count
+from app.tokenizer import get_token_count, count_words
+import html
+import json
+import re
+import unicodedata
 
 router = APIRouter(prefix="")
+
+
+def _strip_html(text: str) -> str:
+    """Extract plain text from HTML-equivalent content.
+
+    Pipelines the input through three stages so that the resulting
+    character and word counts closely mirror TipTap's ``editor.getText()``
+    (the client-side live-counter source of truth):
+
+    1.  Strip all HTML tags (regex – unavoidable approximation; self-closing
+        and void elements are handled correctly because the regex removes
+        everything inside angle brackets).
+    2.  Decode HTML entities (``&nbsp;``, ``&``, ``&mdash;``, …) into
+        literal characters via ``html.unescape``.
+    3.  Normalise any remaining Unicode whitespace characters (e.g. no-break
+        space U+00A0) to ordinary ASCII spaces and collapse runs of
+        whitespace so that Python's ``str.split()`` sees the same word
+        boundaries as JavaScript's ``/\\s+/``.
+
+    .. note::
+        A negligible ±1-2 word / token variation may persist because TipTap
+        joins block-level text nodes with ``\\n`` whereas this function
+        replaces every tag with a single space.  The difference is only
+        noticeable for content whose word count straddles a block boundary
+        (``</p><p>`` yields an extra space in the server count that is
+        absent from the client count, or vice versa).  Both counts are
+        considered accurate.
+    """
+    text = text or ''
+    # 1) Remove tags
+    text = re.sub(r'<[^>]*>', ' ', text)
+    # 2) Decode HTML entities
+    text = html.unescape(text)
+    # 3) Normalise whitespace: convert all Unicode whitespace → ASCII space
+    #    and collapse consecutive spaces.
+    text = ''.join(' ' if unicodedata.category(ch).startswith('Z') or ch in ('\t', '\n', '\r', '\f', '\v') else ch for ch in text)
+    text = re.sub(r'\s+', ' ', text)
+    return text.strip()
 
 
 @router.get("/api/projects")
 async def list_projects(user: dict = Depends(get_current_user), db=Depends(get_db)):
     cursor = await db.execute(
         """SELECT p.id, p.user_id, p.title, p.description, p.created_at, p.updated_at, p.last_accessed,
-                  COALESCE(SUM(CASE WHEN TRIM(ch.content) = '' THEN 0
-                                    ELSE LENGTH(ch.content) - LENGTH(REPLACE(ch.content, ' ', '')) + 1
-                               END), 0) AS total_words,
                   COUNT(DISTINCT ch.id) as chapter_count,
                   COUNT(DISTINCT v.id) as volume_count
            FROM projects p
@@ -28,11 +67,60 @@ async def list_projects(user: dict = Depends(get_current_user), db=Depends(get_d
     result = []
     for r in rows:
         d = dict(r)
-        cursor2 = await db.execute("SELECT content FROM chapters WHERE project_id = ?", (d["id"],))
-        chapters = await cursor2.fetchall()
+
+        # Fetch all chapter content
+        cursor_ch = await db.execute("SELECT content FROM chapters WHERE project_id = ?", (d["id"],))
+        chapters = await cursor_ch.fetchall()
+
+        # Fetch all wiki content (including metadata for subcategories, notepad, etc.)
+        cursor_wiki = await db.execute("SELECT content, metadata_json FROM wiki_entries WHERE project_id = ?", (d["id"],))
+        wikis = await cursor_wiki.fetchall()
+
+        total_words = 0
         total_tokens = 0
         for ch in chapters:
-            total_tokens += get_token_count(ch[0] or "")
+            text = _strip_html(ch[0] or "")
+            total_words += count_words(text)
+            total_tokens += get_token_count(text)
+        for w in wikis:
+            text = _strip_html(w[0] or "")
+            total_words += count_words(text)
+            total_tokens += get_token_count(text)
+            # Also count wiki metadata: subcategories, snippet, notepad, attributes
+            try:
+                meta = json.loads(w[1] or '{}')
+                subs = meta.get('subcategories', {})
+                for sub_val in subs.values():
+                    if sub_val:
+                        # Custom subcategories are stored as JSON {"name":..., "content":...}
+                        content = sub_val
+                        if isinstance(sub_val, str) and sub_val.startswith('{'):
+                            try:
+                                parsed = json.loads(sub_val)
+                                content = parsed.get('content', sub_val)
+                            except:
+                                pass
+                        plain = _strip_html(content)
+                        total_words += count_words(plain)
+                        total_tokens += get_token_count(plain)
+                snippet = meta.get('ai_context_snippet', '')
+                if snippet:
+                    total_words += count_words(snippet)
+                    total_tokens += get_token_count(snippet)
+                notepad = meta.get('private_notepad', '')
+                if notepad:
+                    plain = _strip_html(notepad)
+                    total_words += count_words(plain)
+                    total_tokens += get_token_count(plain)
+                attrs = meta.get('attributes', {})
+                for attr_val in attrs.values():
+                    if attr_val:
+                        total_words += count_words(str(attr_val))
+                        total_tokens += get_token_count(str(attr_val))
+            except:
+                pass
+
+        d["total_words"] = total_words
         d["total_tokens"] = total_tokens
         result.append(d)
     return result
