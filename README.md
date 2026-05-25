@@ -2,7 +2,7 @@
 
 A self‑hosted, private novel writing studio with AI readiness. Lightweight, secure, and accessible anywhere via Tailscale.
 
-## Current Features (v0.3.1)
+## Current Features (v0.4.0)
 
 - **Projects, Volumes, Chapters** – full hierarchical structure with rich text editing (TipTap)
 - **Worldbuilding Wiki** – entries for characters, locations, items, factions, and lore. Preset subcategories, custom subcategories, attributes, AI context snippet, private notepad
@@ -24,6 +24,24 @@ A self‑hosted, private novel writing studio with AI readiness. Lightweight, se
 
 ## Quick Start
 
+### Run with Docker (recommended)
+
+```bash
+git clone https://github.com/Saif4582/chronicle-architect.git
+cd chronicle-architect
+docker compose up -d
+```
+
+Open http://localhost:8000 and register. Your first account becomes the **Owner**.
+
+Persistent data (database, uploads) is stored in the `./data` directory. To stop:
+
+```bash
+docker compose down
+```
+
+### Run without Docker
+
 ```bash
 pip install -r requirements.txt
 python -m uvicorn app.main:app --reload
@@ -35,6 +53,7 @@ Open http://localhost:8000 and register.
 
 ```bash
 git pull
+docker compose up -d --build
 ```
 
 The app will notify you of new releases.
