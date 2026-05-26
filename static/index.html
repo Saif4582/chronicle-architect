@@ -990,14 +990,47 @@
         }
 
         .wiki-category-body {
-            padding: 8px 0;
+            position: relative;
+            padding: 4px 0 4px 20px;
+            margin-left: 20px;
+        }
+
+        .wiki-category-body::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 1px;
+            background: var(--accent-primary);
         }
 
         .wiki-entry-item {
-            padding: 8px 16px 8px 32px;
+            padding: 8px 16px 8px 8px;
             font-size: 14px;
             color: var(--text-secondary);
             cursor: pointer;
+            position: relative;
+        }
+
+        .wiki-entry-item::after {
+            content: '';
+            position: absolute;
+            left: -20px;
+            top: calc(50% - 0.5px);
+            width: 14px;
+            height: 1px;
+            background: var(--accent-primary);
+        }
+
+        .wiki-entry-item:last-child::before {
+            content: '';
+            position: absolute;
+            left: -20px;
+            top: calc(50% - 0.5px);
+            bottom: -4px;
+            width: 1px;
+            background: var(--bg-elevated);
         }
 
         .wiki-entry-item:hover {
@@ -1482,11 +1515,33 @@
 
         /* ---------- Wiki Entry List ---------- */
         .wiki-entry-item {
-            padding: 8px 16px 8px 32px;
+            padding: 8px 16px 8px 8px;
             font-size: 14px;
             color: var(--text-secondary);
             cursor: pointer;
+            position: relative;
         }
+
+        .wiki-entry-item::after {
+            content: '';
+            position: absolute;
+            left: -20px;
+            top: calc(50% - 0.5px);
+            width: 14px;
+            height: 1px;
+            background: var(--accent-primary);
+        }
+
+        .wiki-entry-item:last-child::before {
+            content: '';
+            position: absolute;
+            left: -20px;
+            top: calc(50% - 0.5px);
+            bottom: -4px;
+            width: 1px;
+            background: var(--bg-elevated);
+        }
+
         .wiki-entry-item:hover {
             background: var(--bg-elevated);
             color: var(--text-primary);
@@ -1642,6 +1697,41 @@
         }
         .wiki-editor-placeholder {
             color: var(--text-muted);
+        }
+
+        /* Dark theme overrides for wiki form inputs */
+        .wiki-form .form-group select,
+        .wiki-form .form-group input[type="text"],
+        .wiki-form .form-group textarea,
+        #wiki-form-category,
+        #wiki-form-parent,
+        #wiki-form-content,
+        #wiki-form-name {
+            background-color: var(--bg-input) !important;
+            color: var(--text-primary) !important;
+            border: 1px solid var(--border-medium) !important;
+        }
+
+        .wiki-form .form-group select:focus,
+        .wiki-form .form-group input[type="text"]:focus,
+        .wiki-form .form-group textarea:focus,
+        #wiki-form-category:focus,
+        #wiki-form-parent:focus,
+        #wiki-form-content:focus,
+        #wiki-form-name:focus {
+            border-color: var(--accent-primary) !important;
+        }
+
+        /* TipTap editor dark background */
+        .wiki-editor .ProseMirror {
+            background-color: var(--bg-input) !important;
+            color: var(--text-primary) !important;
+        }
+
+        /* Select dropdown options */
+        .wiki-form .form-group select option {
+            background-color: var(--bg-elevated) !important;
+            color: var(--text-primary) !important;
         }
 
         /* Wiki form sections */
@@ -2448,7 +2538,7 @@
                 let activeTab = 'users';
                 let users = [];
                 let tokens = [];
-                let settings = { lockout_threshold: 5, lockout_duration_minutes: 30, jwt_expiry_days: 30, session_only: false, admins_can_create_users: true, admins_can_delete_users: true, admins_can_see_user_ids: false, admins_can_see_device_info: false, admins_can_see_stats: false };
+                let settings = { lockout_threshold: 5, lockout_duration_minutes: 30, jwt_expiry_days: 30, session_only: false, admins_can_create_users: true, admins_can_delete_users: true, admins_can_see_user_ids: false, admins_can_see_device_info: false, admins_can_see_stats: false, admins_can_edit_users: false, admins_can_see_logs: false, admins_can_see_tokens: false };
                 let loading = true;
                 let tokensLoading = true;
                 let loadError = '';
@@ -2579,6 +2669,7 @@
                     const statsInput = document.getElementById('admins-can-see-stats');
                     const editUsersInput = document.getElementById('admins-can-edit-users');
                     const seeLogsInput = document.getElementById('admins-can-see-logs');
+                    const seeTokensInput = document.getElementById('admins-can-see-tokens');
                     const body = {};
                     if (thresholdInput) body.lockout_threshold = parseInt(thresholdInput.value);
                     if (durationInput) body.lockout_duration_minutes = parseInt(durationInput.value);
@@ -2591,6 +2682,7 @@
                     if (statsInput) body.admins_can_see_stats = statsInput.checked;
                     if (editUsersInput) body.admins_can_edit_users = editUsersInput.checked;
                     if (seeLogsInput) body.admins_can_see_logs = seeLogsInput.checked;
+                    if (seeTokensInput) body.admins_can_see_tokens = seeTokensInput.checked;
 
                     apiPatch('/api/admin/settings', body)
                         .then(data => {
@@ -2625,7 +2717,7 @@
                                     onclick: () => { activeTab = 'settings'; renderModal(); },
                                 }, 'Settings')
                                 : null,
-                            (getUserRole() === 'owner')
+                            (getUserRole() === 'owner' || (getUserRole() === 'admin' && settings.admins_can_see_tokens))
                                 ? el('button', {
                                     className: 'admin-tab' + (activeTab === 'tokens' ? ' active' : ''),
                                     onclick: () => { activeTab = 'tokens'; renderModal(); },
@@ -2742,8 +2834,9 @@
                             if (currentUserRole === 'owner' || (currentUserRole === 'admin' && settings.admins_can_edit_users)) {
                                 editBtn = el('button', {
                                     className: 'admin-btn-small',
-                                    title: 'Edit user',
-                                    onclick: () => showEditUserModal(u),
+                                    disabled: !canModify ? 'disabled' : null,
+                                    title: isHigherRank ? 'Cannot manage users above you in hierarchy' : 'Edit user',
+                                    onclick: () => { if (canModify) showEditUserModal(u); },
                                 }, '\u270E');
                             }
                         }
@@ -3093,6 +3186,17 @@
                                 'Allow admins to see audit logs',
                             ),
                         ),
+                        el('div', { className: 'form-group' },
+                            el('label', null,
+                                el('input', {
+                                    id: 'admins-can-see-tokens',
+                                    type: 'checkbox',
+                                    checked: settings.admins_can_see_tokens ? 'checked' : null,
+                                    style: { marginRight: '8px' },
+                                }),
+                                'Allow admins to see the Tokens tab',
+                            ),
+                        ),
                         el('p', { style: { fontSize: '12px', color: 'var(--text-muted)', margin: '0 0 8px 0' } },
                             'Changes apply to new logins only. Existing sessions will remain valid until their token expires.'),
                         el('button', {
@@ -3110,11 +3214,23 @@
 
                     const rows = tokens.map(u => {
                         const isSelf = u.id === decodeToken(getToken()).id;
+                        let isHigherRank = false;
+                        const currentUserRole = getUserRole();
+                        if (currentUserRole !== 'owner') {
+                            const decoded = decodeToken(getToken());
+                            const currentUsername = decoded ? decoded.username : null;
+                            const currentUserObj = tokens.find(uu => uu.username === currentUsername);
+                            if (currentUserObj && u.position !== undefined && currentUserObj.position !== undefined) {
+                                isHigherRank = currentUserObj.position > u.position;
+                            }
+                        }
+                        const canRevoke = !isSelf && !isHigherRank;
                         const revokeBtn = el('button', {
                             className: 'admin-btn-small danger',
-                            disabled: isSelf ? 'disabled' : null,
-                            title: isSelf ? 'Cannot revoke your own token here (use Revoke All)' : 'Revoke token for this user',
+                            disabled: !canRevoke ? 'disabled' : null,
+                            title: isSelf ? 'Cannot revoke your own token here (use Revoke All)' : (isHigherRank ? 'Cannot manage users above you in hierarchy' : 'Revoke token for this user'),
                             onclick: () => {
+                                if (!canRevoke) return;
                                 showInlineConfirm(
                                     'Revoke token for "' + u.username + '"? This will force them to log in again.',
                                     () => {
@@ -3148,7 +3264,7 @@
                         ),
                         el('p', { style: { color: 'var(--text-secondary)', fontSize: '14px', marginBottom: '16px' } },
                             'Revoking all tokens forces every user (including yourself) to log in again.'),
-                        el('button', {
+                        getUserRole() === 'owner' ? el('button', {
                             className: 'btn btn-danger',
                             onclick: () => {
                                 showInlineConfirm(
@@ -3168,7 +3284,7 @@
                                     }
                                 );
                             },
-                        }, 'Revoke All Tokens'),
+                        }, 'Revoke All Tokens') : null,
                     );
                 }
 
@@ -5896,6 +6012,7 @@
                 let formName = '';
                 let formCategory = '';
                 let formParentId = '';
+                let formParentIds = [];
                 let formContent = '';
                 let formMetadata = {
                     ai_context_snippet: '',
@@ -5924,7 +6041,7 @@
 
                 // Helper: store subcategory content while preserving the display name for custom subcats
                 function setSubcategoryContent(key, htmlContent) {
-                    const isCustom = customSubcats.some(c => c.key === key);
+                    const isCustom = key.startsWith('_custom_');
                     if (isCustom) {
                         const existing = formMetadata.subcategories[key] || '{}';
                         let name = key;
@@ -6228,6 +6345,8 @@
                         'Items / Artefacts': ['Functionality & Powers', 'Origins & Significance'],
                         'Factions / Groups': ['Structure & Hierarchy', 'Agenda & Philosophy'],
                         'Lore / History': ['The Event / Myth Summary', 'Modern Fallout / Impact'],
+                        'Religions': ['Deities', 'Beliefs', 'Practices', 'Symbols', 'Organizations'],
+                        'Power System': ['Source', 'Rules', 'Limitations', 'Techniques', 'Users'],
                     };
                     return map[category] || [];
                 }
@@ -6239,6 +6358,8 @@
                         'Items / Artefacts': ['Type', 'Material', 'Current Owner', 'Creator', 'Rarity'],
                         'Factions / Groups': ['Type', 'Headquarters', 'Leader', 'Emblem/Symbol', 'Motto'],
                         'Lore / History': ['Era/Time Period', 'Key Figures Involved', 'Key Locations Involved', 'Outcome'],
+                        'Religions': ['Type', 'Worship Style', 'Origins', 'Influence', 'Holy Texts'],
+                        'Power System': ['Type', 'Rarity', 'Cost/Drawback', 'Training Required', 'Notable Users'],
                     };
                     return map[category] || [];
                 }
@@ -6286,6 +6407,7 @@
                     formName = '';
                     formCategory = '';
                     formParentId = '';
+                    formParentIds = [];
                     formContent = '';
                     formMetadata = {
                         ai_context_snippet: '',
@@ -6312,8 +6434,9 @@
                             selectedEntry = null;
                             creatingNew = true;
                             formName = '';
-                            formCategory = '';
+                            formCategory = 'Characters';
                             formParentId = '';
+                            formParentIds = [];
                             formContent = '';
                             formMetadata = {
                                 ai_context_snippet: '',
@@ -6328,7 +6451,7 @@
                             collapsedSubcategories = {};
                             _showCustomCategory = false;
                             wikiFormDirty = false;
-                            render();
+                            onCategoryChange('Characters');
                         });
                     } else {
                         cleanupWikiEditors();
@@ -6336,8 +6459,9 @@
                         selectedEntry = null;
                         creatingNew = true;
                         formName = '';
-                        formCategory = '';
+                        formCategory = 'Characters';
                         formParentId = '';
+                        formParentIds = [];
                         formContent = '';
                         formMetadata = {
                             ai_context_snippet: '',
@@ -6352,7 +6476,7 @@
                         collapsedSubcategories = {};
                         _showCustomCategory = false;
                         wikiFormDirty = false;
-                        render();
+                        onCategoryChange('Characters');
                     }
                 }
 
@@ -6364,6 +6488,7 @@
                     formName = entry.name || '';
                     formCategory = entry.category || '';
                     formParentId = entry.parent_id != null ? String(entry.parent_id) : '';
+                    formParentIds = entry.parent_ids || (entry.parent_id ? [entry.parent_id] : []);
                     formContent = entry.content || '';
                     try {
                         formMetadata = JSON.parse(entry.metadata_json || '{}');
@@ -6492,9 +6617,10 @@
                     const body = {
                         name: formName.trim(),
                         category: formCategory.trim(),
-                        parent_id: formParentId ? parseInt(formParentId) : null,
+                        parent_id: formParentIds.length > 0 ? formParentIds[0] : null,
                         content: formContent,
                         metadata_json: JSON.stringify(metadata),
+                        parents: formParentIds.length > 0 ? formParentIds : null,
                     };
 
                     try {
@@ -6724,9 +6850,23 @@
 
                 // ─── Remove Custom Subcategory ───────────────────────
                 function removeCustomSubcategory(key) {
+                    function doDelete() {
+                        // Destroy any editor for this subcategory first
+                        for (const item of wikiTiptapEditors) {
+                            if (item.id === 'wiki-subcat-' + key.replace(/[^a-zA-Z0-9_-]/g, '_')) {
+                                try { item.editor.destroy(); } catch(_) {}
+                            }
+                        }
+                        wikiTiptapEditors = wikiTiptapEditors.filter(item => item.id !== 'wiki-subcat-' + key.replace(/[^a-zA-Z0-9_-]/g, '_'));
+                        delete formMetadata.subcategories[key];
+                        customSubcats = customSubcats.filter(c => c.key !== key);
+                        wikiFormDirty = true;
+                        cleanupWikiEditors();
+                        render();
+                    }
+
                     const sc = customSubcats.find(c => c.key === key);
                     const raw = formMetadata.subcategories[key] || '';
-                    // Extract plain text content, handling both JSON-encoded custom subcats and plain HTML
                     let plainText = '';
                     if (typeof raw === 'string' && raw.startsWith('{')) {
                         try {
@@ -6739,14 +6879,6 @@
                         plainText = raw.replace(/<[^>]*>/g, '').trim();
                     }
                     const hasContent = plainText.length > 0;
-
-                    function doDelete() {
-                        delete formMetadata.subcategories[key];
-                        customSubcats = customSubcats.filter(c => c.key !== key);
-                        wikiFormDirty = true;
-                        cleanupWikiEditors();
-                        render();
-                    }
 
                     if (hasContent) {
                         showConfirmModal('Delete this subcategory?', doDelete);
@@ -6778,18 +6910,80 @@
                 function saveTemplate() {
                     const cat = formCategory.trim();
                     if (!cat) return;
+                    // Sync all TipTap editor content into formMetadata.subcategories
+                    for (const item of wikiTiptapEditors) {
+                        if (item.id.startsWith('wiki-subcat-')) {
+                            const keyFromId = item.id.slice('wiki-subcat-'.length);
+                            if (formMetadata.subcategories.hasOwnProperty(keyFromId)) {
+                                setSubcategoryContent(keyFromId, item.editor.getHTML());
+                            } else {
+                                for (const name of Object.keys(formMetadata.subcategories)) {
+                                    const expectedId = 'wiki-subcat-' + name.replace(/[^a-zA-Z0-9_-]/g, '_');
+                                    if (expectedId === item.id) {
+                                        formMetadata.subcategories[name] = item.editor.getHTML();
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    // Collect custom names BEFORE clearing — these will be saved to the template
+                    const customNames = customSubcats.map(sc => sc.name);
+                    // Migrate custom subcat content from unique keys to display names
+                    for (const sc of customSubcats) {
+                        if (sc.key === sc.name) {
+                            // Key is already the display name — content is stored correctly, skip
+                            continue;
+                        }
+                        const raw = formMetadata.subcategories[sc.key];
+                        if (raw) {
+                            let content = raw;
+                            if (typeof raw === 'string' && raw.startsWith('{')) {
+                                try {
+                                    const parsed = JSON.parse(raw);
+                                    content = parsed.content || '';
+                                } catch(_) {}
+                            }
+                            formMetadata.subcategories[sc.name] = content;
+                        }
+                        delete formMetadata.subcategories[sc.key];
+                    }
+                    customSubcats = [];
+                    // Save template: preset names + migrated custom subcat names
                     const presetSubs = getPresetSubcategories(cat);
-                    const allSubs = [...presetSubs, ...customSubcats.map(c => c.name)];
+                    const allSubs = [...presetSubs, ...customNames];
                     const attrNames = getEffectiveAttributes(cat);
                     const data = JSON.stringify({ subcategories: allSubs, attributes: attrNames });
                     localStorage.setItem('wiki_template_' + cat, data);
                     showToast('Template saved for ' + cat);
+                    cleanupWikiEditors();
+                    render();
                 }
 
                 function resetTemplate() {
                     const cat = formCategory.trim();
                     if (!cat) return;
                     localStorage.removeItem('wiki_template_' + cat);
+                    showToast('Template reset for ' + cat);
+                    // Rebuild customSubcats: any subcategory key that is NOT a preset name
+                    // is a custom subcategory. Use getPresetSubcategories for the hardcoded list.
+                    const presetNames = getPresetSubcategories(cat);
+                    customSubcats = [];
+                    if (formMetadata.subcategories) {
+                        for (const key of Object.keys(formMetadata.subcategories)) {
+                            if (!presetNames.includes(key)) {
+                                let displayName = key;
+                                const val = formMetadata.subcategories[key];
+                                if (typeof val === 'string' && val.startsWith('{')) {
+                                    try {
+                                        const parsed = JSON.parse(val);
+                                        if (parsed.name) displayName = parsed.name;
+                                    } catch(_) {}
+                                }
+                                customSubcats.push({ key: key, name: displayName });
+                            }
+                        }
+                    }
                     cleanupWikiEditors();
                     render();
                 }
@@ -6900,7 +7094,7 @@
                             totalWc += counts.wc;
                             totalTc += counts.tc;
                         }
-                        const catPresets = ['Characters', 'Locations', 'Items / Artefacts', 'Factions / Groups', 'Lore / History'];
+                        const catPresets = ['Characters', 'Locations', 'Items / Artefacts', 'Factions / Groups', 'Lore / History', 'Religions', 'Power System'];
                         const isCustomCat = !catPresets.includes(catName);
                         const headerChildren = [
                             el('span', { className: 'wiki-category-arrow' }, '\u25BC'),
@@ -7013,15 +7207,8 @@
 
                 // ─── Render: Detail View ─────────────────────────────
                 function renderDetailView(entry) {
-                    let parentName = '\u2014';
-                    let parentClickHandler = null;
-                    if (entry.parent_id) {
-                        const parentEntry = entries.find(e => e.id === entry.parent_id);
-                        if (parentEntry) {
-                            parentName = parentEntry.name;
-                            parentClickHandler = () => viewEntry(parentEntry);
-                        }
-                    }
+                    const parentIds = entry.parent_ids || (entry.parent_id ? [entry.parent_id] : []);
+                    const parentNames = entry.parent_names || [];
 
                     let meta = {};
                     try { meta = JSON.parse(entry.metadata_json || '{}'); } catch (_) {}
@@ -7104,7 +7291,7 @@
 
                     const counts = computeWikiEntryCounts(entry);
 
-                    const catPresetsDV = ['Characters', 'Locations', 'Items / Artefacts', 'Factions / Groups', 'Lore / History'];
+                    const catPresetsDV = ['Characters', 'Locations', 'Items / Artefacts', 'Factions / Groups', 'Lore / History', 'Religions', 'Power System'];
                     const isCustomCatDV = entry.category && !catPresetsDV.includes(entry.category);
 
                     const createdDate = entry.created_at
@@ -7161,9 +7348,14 @@
                             : null,
                         el('p', { id: 'wiki-detail-counts', style: { fontSize: '12px', color: 'var(--text-muted)', marginTop: '12px', marginBottom: '16px' } },
                             'Words: ' + counts.wc.toLocaleString() + ' \u00B7 Tokens: ...'),
-                        parentName !== '\u2014'
+                        parentIds.length > 0
                             ? el('p', { className: 'wiki-parent-link' },
-                                'Parent: ', el('a', { onclick: parentClickHandler }, parentName))
+                                parentIds.length === 1 ? 'Parent: ' : 'Parents: ',
+                                ...parentNames.flatMap((p, i) => {
+                                    const sep = i < parentNames.length - 1 ? el('span', null, ', ') : null;
+                                    return [el('a', { onclick: () => { const e = entries.find(en => en.id === p.id); if (e) viewEntry(e); } }, p.name), sep];
+                                }),
+                            )
                             : null,
                         el('div', { className: 'wiki-detail-actions' },
                             el('button', { className: 'btn btn-primary btn-sm', onclick: () => editEntry(entry) }, 'Edit'),
@@ -7180,7 +7372,7 @@
                 // ─── Render: Editor Form ─────────────────────────────
                 function renderForm() {
                     const isNew = !editingEntry;
-                    const catPresets = ['Characters', 'Locations', 'Items / Artefacts', 'Factions / Groups', 'Lore / History'];
+                    const catPresets = ['Characters', 'Locations', 'Items / Artefacts', 'Factions / Groups', 'Lore / History', 'Religions', 'Power System'];
                     const dropdownCategories = (categories && categories.length > 0) ? categories : catPresets;
 
                     // Determine subcategory names and attribute names
@@ -7191,15 +7383,25 @@
                         attrNames = getEffectiveAttributes(formCategory);
                     }
 
-                    // Include custom subcategories
-                    const allSubcatNames = [...subcatNames, ...customSubcats];
-
-                    // Parent options
-                    const parentOptions = entries.map(e => {
-                        const opt = el('option', { value: e.id }, e.name || 'Untitled');
-                        if (String(e.id) === formParentId) opt.setAttribute('selected', 'selected');
-                        return opt;
-                    });
+                    // Include custom subcategories (deduplicated against preset names)
+                    const allSubcatNames = [...subcatNames];
+                    for (const sc of customSubcats) {
+                        if (!subcatNames.includes(sc.name)) {
+                            allSubcatNames.push(sc);
+                        }
+                    }
+                    // Include any subcategory content keys not already in the list
+                    if (formMetadata.subcategories) {
+                        for (const key of Object.keys(formMetadata.subcategories)) {
+                            const alreadyInList = allSubcatNames.some(item => {
+                                if (typeof item === 'object') return item.key === key;
+                                return item === key;
+                            });
+                            if (!alreadyInList) {
+                                allSubcatNames.push(key);
+                            }
+                        }
+                    }
 
                     // Build category dropdown options from loaded categories (presets + custom from DB)
                     const catOptions = dropdownCategories.map(c => el('option', { value: c, selected: formCategory === c ? 'selected' : null }, c));
@@ -7260,16 +7462,48 @@
                         ),
                     );
 
-                    // Parent dropdown
+                    // Multi-parent selector chips
+                    const parentChips = formParentIds.map(pid => {
+                        const entry = entries.find(e => e.id === pid);
+                        const name = entry ? entry.name : 'Unknown';
+                        return el('span', {
+                            style: {
+                                display: 'inline-flex', alignItems: 'center', gap: '4px',
+                                background: 'var(--accent-primary-soft)', color: 'var(--accent-primary)',
+                                padding: '3px 8px', borderRadius: '12px', fontSize: '12px',
+                                fontWeight: 600,
+                            },
+                        }, name,
+                            el('span', {
+                                style: { cursor: 'pointer', marginLeft: '4px', fontWeight: 700 },
+                                onclick: () => {
+                                    formParentIds = formParentIds.filter(id => id !== pid);
+                                    wikiFormDirty = true;
+                                    render();
+                                },
+                            }, '\u00D7'),
+                        );
+                    });
+
+                    const availableParents = entries.filter(e => !formParentIds.includes(e.id) && (!editingEntry || e.id !== editingEntry.id));
+
                     formElements.push(
                         el('div', { className: 'form-group' },
-                            el('label', { htmlFor: 'wiki-form-parent' }, 'Parent (optional)'),
+                            el('label', null, 'Parents (optional)'),
+                            parentChips.length > 0 ? el('div', { style: { display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '8px' } }, ...parentChips) : null,
                             el('select', {
                                 id: 'wiki-form-parent',
-                                onchange: (e) => { formParentId = e.target.value; wikiFormDirty = true; },
+                                onchange: (e) => {
+                                    const val = parseInt(e.target.value);
+                                    if (val && !formParentIds.includes(val)) {
+                                        formParentIds.push(val);
+                                        wikiFormDirty = true;
+                                        render();
+                                    }
+                                },
                             },
-                                el('option', { value: '' }, '\u2014 None \u2014'),
-                                ...parentOptions,
+                                el('option', { value: '' }, '-- Add parent --'),
+                                ...availableParents.map(e => el('option', { value: e.id }, e.name || 'Untitled')),
                             ),
                         ),
                     );
@@ -7552,7 +7786,7 @@
                     if (contentTa) contentTa.value = formContent;
 
                     const parentSel = document.getElementById('wiki-form-parent');
-                    if (parentSel) parentSel.value = formParentId;
+                    if (parentSel) parentSel.value = '';
 
                     const snippetTa = document.getElementById('wiki-ai-snippet');
                     if (snippetTa) snippetTa.value = formMetadata.ai_context_snippet || '';
@@ -7561,12 +7795,29 @@
                     const showForm = !!(editingEntry || creatingNew);
                     if (showForm) {
                         // Initialize subcategory editors if category is selected
-                        const dropdownCategories = (categories && categories.length > 0) ? categories : ['Characters', 'Locations', 'Items / Artefacts', 'Factions / Groups', 'Lore / History'];
+                        const dropdownCategories = (categories && categories.length > 0) ? categories : ['Characters', 'Locations', 'Items / Artefacts', 'Factions / Groups', 'Lore / History', 'Religions', 'Power System'];
                         let subcatNames = [];
                         if (formCategory && !_showCustomCategory && dropdownCategories.includes(formCategory)) {
                             subcatNames = getEffectiveSubcategories(formCategory);
                         }
-                        const allSubcatNames = [...subcatNames, ...customSubcats];
+                        const allSubcatNames = [...subcatNames];
+                        for (const sc of customSubcats) {
+                            if (!subcatNames.includes(sc.name)) {
+                                allSubcatNames.push(sc);
+                            }
+                        }
+                        // Include any subcategory content keys not already in the list
+                        if (formMetadata.subcategories) {
+                            for (const key of Object.keys(formMetadata.subcategories)) {
+                                const alreadyInList = allSubcatNames.some(item => {
+                                    if (typeof item === 'object') return item.key === key;
+                                    return item === key;
+                                });
+                                if (!alreadyInList) {
+                                    allSubcatNames.push(key);
+                                }
+                            }
+                        }
 
                         for (const item of allSubcatNames) {
                             const isCustom = typeof item === 'object';
@@ -7615,6 +7866,30 @@
                                 }
                             }
                         }, 100);
+
+                        // Final safety net: init any editors still missing after all retries
+                        setTimeout(() => {
+                            if (!showForm) return;
+                            const allSubcatDivs = document.querySelectorAll('[id^="wiki-subcat-"]');
+                            for (const div of allSubcatDivs) {
+                                const existing = wikiTiptapEditors.find(item => item.id === div.id);
+                                if (!existing) {
+                                    const key = div.id.replace('wiki-subcat-', '');
+                                    let content = (formMetadata.subcategories && formMetadata.subcategories[key]) || '';
+                                    // Could be JSON-wrapped — extract content
+                                    if (typeof content === 'string' && content.startsWith('{')) {
+                                        try {
+                                            const parsed = JSON.parse(content);
+                                            content = parsed.content || '';
+                                        } catch(_) {}
+                                    }
+                                    initWikiSubcategoryEditor(div.id, content, (ed) => {
+                                        setSubcategoryContent(key, ed.getHTML());
+                                        wikiFormDirty = true;
+                                    });
+                                }
+                            }
+                        }, 300);
                     }
                 }
 

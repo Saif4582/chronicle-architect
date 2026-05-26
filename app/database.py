@@ -194,6 +194,12 @@ async def init_db() -> None:
         except:
             pass  # Column already exists
 
+        # Migration: add parents column to wiki_entries if missing
+        try:
+            await db.execute("ALTER TABLE wiki_entries ADD COLUMN parents TEXT DEFAULT NULL")
+        except:
+            pass  # Column already exists
+
         await db.commit()
 
 

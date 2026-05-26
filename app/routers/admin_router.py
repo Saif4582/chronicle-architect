@@ -63,6 +63,7 @@ DEFAULT_CONFIG = {
     "admins_can_see_stats": False,
     "admins_can_edit_users": False,
     "admins_can_see_logs": False,
+    "admins_can_see_tokens": False,
 }
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -221,6 +222,8 @@ async def admin_update_user(
     user = await cursor.fetchone()
     if user is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+    _check_hierarchy(admin, dict(user))
 
     updates = []
     params = []
@@ -458,6 +461,8 @@ async def update_settings(
         config["admins_can_edit_users"] = bool(body["admins_can_edit_users"])
     if "admins_can_see_logs" in body:
         config["admins_can_see_logs"] = bool(body["admins_can_see_logs"])
+    if "admins_can_see_tokens" in body:
+        config["admins_can_see_tokens"] = bool(body["admins_can_see_tokens"])
     _save_config(config)
     await log_action(db, admin["id"], admin["username"], "update_settings", "Settings changed")
     return config
@@ -508,10 +513,12 @@ async def list_tokens(
     db=Depends(get_db),
 ):
     if admin["role"] != "owner":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only the owner can view tokens.")
+        config = _load_config()
+        if not config.get("admins_can_see_tokens", False):
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only the owner can view tokens.")
 
     cursor = await db.execute(
-        "SELECT id, username, role, token_version FROM users ORDER BY id"
+        "SELECT id, username, role, token_version, position FROM users ORDER BY position ASC, id ASC"
     )
     rows = await cursor.fetchall()
     return [dict(r) for r in rows]
@@ -524,12 +531,16 @@ async def revoke_user_token(
     db=Depends(get_db),
 ):
     if admin["role"] != "owner":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only the owner can revoke tokens.")
+        config = _load_config()
+        if not config.get("admins_can_see_tokens", False):
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only the owner can revoke tokens.")
 
-    cursor = await db.execute("SELECT id, username FROM users WHERE id = ?", (user_id,))
+    cursor = await db.execute("SELECT id, username, role, position FROM users WHERE id = ?", (user_id,))
     user = await cursor.fetchone()
     if user is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+    _check_hierarchy(admin, dict(user))
 
     await db.execute("UPDATE users SET token_version = token_version + 1 WHERE id = ?", (user_id,))
     await db.commit()

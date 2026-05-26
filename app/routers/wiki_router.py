@@ -58,7 +58,28 @@ async def list_wiki_entries(
             (project_id,),
         )
     rows = await cursor.fetchall()
-    return [dict(r) for r in rows]
+    result = []
+    for r in rows:
+        entry = dict(r)
+        parent_ids = []
+        if entry.get("parents"):
+            try:
+                parent_ids = json.loads(entry["parents"])
+            except:
+                parent_ids = []
+        if entry.get("parent_id") and entry["parent_id"] not in parent_ids:
+            parent_ids.append(entry["parent_id"])
+        entry["parent_ids"] = parent_ids
+        parent_names = []
+        if parent_ids:
+            for pid in parent_ids:
+                cursor2 = await db.execute("SELECT name FROM wiki_entries WHERE id = ?", (pid,))
+                p_row = await cursor2.fetchone()
+                if p_row:
+                    parent_names.append({"id": pid, "name": p_row[0]})
+        entry["parent_names"] = parent_names
+        result.append(entry)
+    return result
 
 
 @router.post("/api/projects/{project_id}/wiki", response_model=WikiEntryResponse, status_code=status.HTTP_201_CREATED)
@@ -82,9 +103,10 @@ async def create_wiki_entry(project_id: int, body: WikiEntryCreate, user: dict =
     if existing:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="An entry with this name already exists in this category.")
 
+    parents_json = json.dumps(body.parents) if body.parents else None
     cursor = await db.execute(
-        "INSERT INTO wiki_entries (project_id, name, category, parent_id, content, metadata_json) VALUES (?, ?, ?, ?, ?, ?)",
-        (project_id, body.name, body.category, body.parent_id, body.content, body.metadata_json),
+        "INSERT INTO wiki_entries (project_id, name, category, parent_id, content, metadata_json, parents) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        (project_id, body.name, body.category, body.parent_id, body.content, body.metadata_json, parents_json),
     )
     await db.commit()
     entry_id = cursor.lastrowid
@@ -97,6 +119,23 @@ async def create_wiki_entry(project_id: int, body: WikiEntryCreate, user: dict =
 @router.get("/api/wiki/{id}", response_model=WikiEntryResponse)
 async def get_wiki_entry(id: int, user: dict = Depends(get_current_user), db=Depends(get_db)):
     entry_dict, _ = await _verify_wiki_ownership(id, user, db)
+    parent_ids = []
+    if entry_dict.get("parents"):
+        try:
+            parent_ids = json.loads(entry_dict["parents"])
+        except:
+            parent_ids = []
+    if entry_dict.get("parent_id") and entry_dict["parent_id"] not in parent_ids:
+        parent_ids.append(entry_dict["parent_id"])
+    entry_dict["parent_ids"] = parent_ids
+    parent_names = []
+    if parent_ids:
+        for pid in parent_ids:
+            cursor = await db.execute("SELECT name FROM wiki_entries WHERE id = ?", (pid,))
+            p_row = await cursor.fetchone()
+            if p_row:
+                parent_names.append({"id": pid, "name": p_row[0]})
+    entry_dict["parent_names"] = parent_names
     return entry_dict
 
 
@@ -124,9 +163,11 @@ async def update_wiki_entry(id: int, body: WikiEntryUpdate, user: dict = Depends
                 detail="An entry with this name already exists in that category.",
             )
 
+    new_parents = body.parents if body.parents is not None else entry_dict.get("parents")
+    parents_json = json.dumps(new_parents) if new_parents else None
     await db.execute(
-        "UPDATE wiki_entries SET name = ?, category = ?, parent_id = ?, content = ?, metadata_json = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
-        (new_name, new_category, new_parent_id, new_content, new_metadata_json, id),
+        "UPDATE wiki_entries SET name = ?, category = ?, parent_id = ?, content = ?, metadata_json = ?, parents = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+        (new_name, new_category, new_parent_id, new_content, new_metadata_json, parents_json, id),
     )
     await db.commit()
 
@@ -155,7 +196,7 @@ async def list_wiki_categories(project_id: int, user: dict = Depends(get_current
     if project_dict["user_id"] != user["id"]:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not your project")
 
-    PRESET_CATEGORIES = ['Characters', 'Locations', 'Items / Artefacts', 'Factions / Groups', 'Lore / History']
+    PRESET_CATEGORIES = ['Characters', 'Locations', 'Items / Artefacts', 'Factions / Groups', 'Lore / History', 'Religions', 'Power System']
 
     cursor = await db.execute(
         "SELECT DISTINCT category FROM wiki_entries WHERE project_id = ? AND category IS NOT NULL AND category != '' ORDER BY category ASC",
@@ -189,7 +230,7 @@ async def rename_wiki_category(project_id: int, old_name: str, request: Request,
     if not new_name:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="New category name is required")
 
-    PRESET_CATEGORIES = ['Characters', 'Locations', 'Items / Artefacts', 'Factions / Groups', 'Lore / History']
+    PRESET_CATEGORIES = ['Characters', 'Locations', 'Items / Artefacts', 'Factions / Groups', 'Lore / History', 'Religions', 'Power System']
     if old_name in PRESET_CATEGORIES:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Cannot rename preset categories")
 
@@ -235,7 +276,7 @@ async def delete_wiki_category(
     if project_dict["user_id"] != user["id"]:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not your project")
 
-    PRESET_CATEGORIES = ['Characters', 'Locations', 'Items / Artefacts', 'Factions / Groups', 'Lore / History']
+    PRESET_CATEGORIES = ['Characters', 'Locations', 'Items / Artefacts', 'Factions / Groups', 'Lore / History', 'Religions', 'Power System']
     if category_name in PRESET_CATEGORIES:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Cannot delete preset categories.")
 

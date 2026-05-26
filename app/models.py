@@ -105,6 +105,7 @@ class WikiEntryCreate(BaseModel):
     parent_id: Optional[int] = None
     content: str = ""
     metadata_json: str = "{}"
+    parents: Optional[list[int]] = None
 
 
 class WikiEntryUpdate(BaseModel):
@@ -113,6 +114,7 @@ class WikiEntryUpdate(BaseModel):
     parent_id: Optional[int] = None
     content: Optional[str] = None
     metadata_json: Optional[str] = None
+    parents: Optional[list[int]] = None
 
 
 class WikiEntryResponse(BaseModel):
