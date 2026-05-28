@@ -1,5 +1,5 @@
 from pydantic import BaseModel, ConfigDict
-from typing import Optional
+from typing import Optional, List
 
 
 class UserCreate(BaseModel):
@@ -161,3 +161,106 @@ class AdminUserUpdate(BaseModel):
 
 class ReorderRequest(BaseModel):
     order: list[int]
+
+
+class WikiReorderRequest(BaseModel):
+    order: list[int]
+
+
+# --- AI Endpoint Models ---
+
+class AIEndpointCreate(BaseModel):
+    name: str
+    base_url: str
+    api_key: str
+
+class AIEndpointUpdate(BaseModel):
+    name: Optional[str] = None
+    base_url: Optional[str] = None
+    api_key: Optional[str] = None  # Only set if changing; None = don't change
+
+class AIEndpointModelUpdate(BaseModel):
+    enabled: Optional[bool] = None
+    multiplier_requests: Optional[float] = None
+    multiplier_tokens: Optional[float] = None
+    max_context_tokens: Optional[int] = None
+
+class AIEndpointUserAssign(BaseModel):
+    user_id: int
+    limit_type: str = "requests"  # "requests", "tokens", "both"
+    limit_value_requests: Optional[int] = None
+    limit_value_tokens: Optional[int] = None
+    reset_schedule: str = "daily"  # "daily", "weekly", "monthly"
+    reset_time: Optional[str] = None  # hour (0-23) for daily, day name for weekly, date (1-28) for monthly
+    is_shared_pool: bool = False
+    shared_pool_id: Optional[int] = None
+    config_id: Optional[int] = None  # Named config preset to link user to
+
+class AIEndpointUserUpdate(BaseModel):
+    limit_type: Optional[str] = None
+    limit_value_requests: Optional[int] = None
+    limit_value_tokens: Optional[int] = None
+    reset_schedule: Optional[str] = None
+    reset_time: Optional[str] = None
+    is_shared_pool: Optional[bool] = None
+
+# --- AI Endpoint Configuration (Presets) Models ---
+
+class AIConfigCreate(BaseModel):
+    name: str
+    limit_type: str = "requests"
+    limit_value_requests: Optional[int] = None
+    limit_value_tokens: Optional[int] = None
+    reset_schedule: str = "daily"
+    reset_time: Optional[str] = None
+    is_shared_pool: bool = False
+
+class AIConfigUpdate(BaseModel):
+    name: Optional[str] = None
+    limit_type: Optional[str] = None
+    limit_value_requests: Optional[int] = None
+    limit_value_tokens: Optional[int] = None
+    reset_schedule: Optional[str] = None
+    reset_time: Optional[str] = None
+    is_shared_pool: Optional[bool] = None
+
+# --- AI Chat Models ---
+
+class AIChatRequest(BaseModel):
+    session_id: Optional[int] = None
+    endpoint_id: Optional[int] = None
+    model_name: Optional[str] = None
+    config_id: Optional[int] = None  # Named config preset to use
+    message: str
+    context_selection: Optional[dict] = None  # { chapter_ids: [], volume_ids: [], wiki_ids: [] }
+    reasoning: Optional[bool] = False
+
+class AIChatSessionCreate(BaseModel):
+    endpoint_id: int
+    model_name: str
+    title: str = "New Chat"
+    context_selection: Optional[dict] = None
+    config_id: Optional[int] = None  # Named config preset
+
+class AIChatSessionUpdate(BaseModel):
+    title: Optional[str] = None
+    context_selection: Optional[dict] = None
+
+# --- Chat (Communication) Models ---
+
+class DMMessageSend(BaseModel):
+    recipient_id: int
+    content: str
+
+class GroupCreate(BaseModel):
+    name: str
+    member_ids: List[int]
+
+class GroupMessageSend(BaseModel):
+    content: str
+
+class GroupInvite(BaseModel):
+    user_ids: List[int]
+
+class GlobalMessageSend(BaseModel):
+    content: str

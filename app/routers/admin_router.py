@@ -1,14 +1,18 @@
+import asyncio
 import html
+import httpx
 import json
 import os
 import re
+import sys
 import unicodedata
 from datetime import datetime, timedelta
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from app.database import get_db
 from app.auth import get_current_admin_or_owner, hash_password, log_action
 from app.models import UserCreate, AdminUserUpdate, ReorderRequest
 from app.tokenizer import get_token_count, count_words
+from app.ws_manager import admin_manager
 
 
 def _strip_html(text: str) -> str:
@@ -64,10 +68,24 @@ DEFAULT_CONFIG = {
     "admins_can_edit_users": False,
     "admins_can_see_logs": False,
     "admins_can_see_tokens": False,
+    "admins_can_delete_ai_chats": False,
+    "admins_can_delete_global_chat": False,
+    "admins_can_manage_ai": False,
+    "allow_admins_update": False,
 }
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 CONFIG_PATH = os.path.join(BASE_DIR, "data", "admin_config.json")
+
+# Update state (module-level)
+_update_lock = asyncio.Lock()
+_updating_in_progress = False
+
+
+def _parse_version(v: str) -> tuple:
+    """Parse 'v0.4.2' or '0.4.2' into (0, 4, 2) for semantic comparison."""
+    v = v.lstrip("v")
+    return tuple(int(p) for p in v.split("."))
 
 
 def _load_config() -> dict:
@@ -103,7 +121,7 @@ async def list_users(
 ):
     cursor = await db.execute("""
         SELECT id, username, display_name, role, failed_login_attempts, locked_until,
-               last_ip, last_user_agent, last_active_at, last_logout_at, position
+               last_ip, last_user_agent, last_active_at, last_logout_at, position, last_login_at
         FROM users ORDER BY position ASC, id ASC
     """)
     rows = await cursor.fetchall()
@@ -203,6 +221,8 @@ async def reorder_users(
         )
     await db.commit()
     await log_action(db, admin["id"], admin["username"], "reorder_users", "User order updated")
+    await admin_manager.broadcast("users", {"type": "data_changed", "channel": "users"})
+    await admin_manager.broadcast("logs", {"type": "data_changed", "channel": "logs"})
     return {"ok": True}
 
 
@@ -252,6 +272,8 @@ async def admin_update_user(
     await db.commit()
 
     await log_action(db, admin["id"], admin["username"], "edit_user", f"Edited user ID {user_id}")
+    await admin_manager.broadcast("users", {"type": "data_changed", "channel": "users"})
+    await admin_manager.broadcast("logs", {"type": "data_changed", "channel": "logs"})
 
     return {"ok": True, "changed": True}
 
@@ -303,6 +325,21 @@ async def list_logs(
     }
 
 
+@router.delete("/logs")
+async def clear_logs(
+    admin: dict = Depends(get_current_admin_or_owner),
+    db=Depends(get_db),
+):
+    if admin["role"] != "owner":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only the owner can clear logs.")
+    await db.execute("DELETE FROM logs")
+    await db.commit()
+    await log_action(db, admin["id"], admin["username"], "clear_logs", "All logs cleared")
+    await admin_manager.broadcast("logs", {"type": "data_changed", "channel": "logs"})
+    await admin_manager.broadcast("users", {"type": "data_changed", "channel": "users"})
+    return {"ok": True}
+
+
 @router.post("/users")
 async def admin_create_user(
     body: UserCreate,
@@ -334,6 +371,8 @@ async def admin_create_user(
     )
     await db.commit()
     await log_action(db, admin["id"], admin["username"], "create_user", f"Created user '{body.username}'")
+    await admin_manager.broadcast("users", {"type": "data_changed", "channel": "users"})
+    await admin_manager.broadcast("logs", {"type": "data_changed", "channel": "logs"})
     return {"ok": True, "id": cursor.lastrowid}
 
 
@@ -378,6 +417,8 @@ async def toggle_lock(
     updated_user = await cursor2.fetchone()
     now_locked = updated_user and updated_user[0] is not None
     await log_action(db, admin["id"], admin["username"], "toggle_lock", f"User ID {user_id} {'locked' if now_locked else 'unlocked'}")
+    await admin_manager.broadcast("users", {"type": "data_changed", "channel": "users"})
+    await admin_manager.broadcast("logs", {"type": "data_changed", "channel": "logs"})
     return {"ok": True}
 
 
@@ -413,6 +454,8 @@ async def change_role(
     await db.execute("UPDATE users SET role = ? WHERE id = ?", (new_role, user_id))
     await db.commit()
     await log_action(db, admin["id"], admin["username"], "change_role", f"User ID {user_id} changed to {new_role}")
+    await admin_manager.broadcast("users", {"type": "data_changed", "channel": "users"})
+    await admin_manager.broadcast("logs", {"type": "data_changed", "channel": "logs"})
     return {"ok": True}
 
 
@@ -463,8 +506,19 @@ async def update_settings(
         config["admins_can_see_logs"] = bool(body["admins_can_see_logs"])
     if "admins_can_see_tokens" in body:
         config["admins_can_see_tokens"] = bool(body["admins_can_see_tokens"])
+    if "admins_can_delete_ai_chats" in body:
+        config["admins_can_delete_ai_chats"] = bool(body["admins_can_delete_ai_chats"])
+    if "admins_can_delete_global_chat" in body:
+        config["admins_can_delete_global_chat"] = bool(body["admins_can_delete_global_chat"])
+    if "admins_can_manage_ai" in body:
+        config["admins_can_manage_ai"] = bool(body["admins_can_manage_ai"])
+    if "allow_admins_update" in body:
+        config["allow_admins_update"] = bool(body["allow_admins_update"])
     _save_config(config)
     await log_action(db, admin["id"], admin["username"], "update_settings", "Settings changed")
+    await admin_manager.broadcast("users", {"type": "data_changed", "channel": "users"})
+    await admin_manager.broadcast("tokens", {"type": "data_changed", "channel": "tokens"})
+    await admin_manager.broadcast("logs", {"type": "data_changed", "channel": "logs"})
     return config
 
 
@@ -504,6 +558,8 @@ async def delete_user(
     await db.execute("DELETE FROM users WHERE id = ?", (user_id,))
     await db.commit()
     await log_action(db, admin["id"], admin["username"], "delete_user", f"Deleted user ID {user_id} ({dict(user)['username']})")
+    await admin_manager.broadcast("users", {"type": "data_changed", "channel": "users"})
+    await admin_manager.broadcast("logs", {"type": "data_changed", "channel": "logs"})
     return {"ok": True}
 
 
@@ -518,7 +574,7 @@ async def list_tokens(
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only the owner can view tokens.")
 
     cursor = await db.execute(
-        "SELECT id, username, role, token_version, position FROM users ORDER BY position ASC, id ASC"
+        "SELECT id, username, role, token_version, position, last_active_at, last_logout_at FROM users ORDER BY position ASC, id ASC"
     )
     rows = await cursor.fetchall()
     return [dict(r) for r in rows]
@@ -545,6 +601,8 @@ async def revoke_user_token(
     await db.execute("UPDATE users SET token_version = token_version + 1 WHERE id = ?", (user_id,))
     await db.commit()
     await log_action(db, admin["id"], admin["username"], "revoke_token", f"Token revoked for user ID {user_id}")
+    await admin_manager.broadcast("tokens", {"type": "data_changed", "channel": "tokens"})
+    await admin_manager.broadcast("logs", {"type": "data_changed", "channel": "logs"})
     return {"ok": True}
 
 
@@ -560,4 +618,293 @@ async def revoke_all_tokens(
     await db.execute("UPDATE users SET token_version = token_version + 1")
     await db.commit()
     await log_action(db, admin["id"], admin["username"], "revoke_all_tokens", "All tokens revoked")
+    await admin_manager.broadcast("tokens", {"type": "data_changed", "channel": "tokens"})
+    await admin_manager.broadcast("logs", {"type": "data_changed", "channel": "logs"})
     return {"ok": True}
+
+
+# ---------------------------------------------------------------------------
+# Check Update — fetch latest release from GitHub
+# ---------------------------------------------------------------------------
+
+
+@router.get("/check-update")
+async def check_update(
+    admin: dict = Depends(get_current_admin_or_owner),
+):
+    # Read local version.json
+    version_path = os.path.join(BASE_DIR, "version.json")
+    try:
+        with open(version_path, "r") as f:
+            local = json.load(f)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to read version.json: {e}")
+
+    current_version = local.get("version", "0.0.0")
+    if not current_version.startswith("v"):
+        current_version = "v" + current_version
+
+    # Fetch latest release from GitHub
+    try:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            resp = await client.get(
+                "https://api.github.com/repos/Saif4582/chronicle-architect/releases/latest",
+                headers={"Accept": "application/vnd.github.v3+json"},
+            )
+            if resp.status_code in (403, 429):
+                raise HTTPException(
+                    status_code=502,
+                    detail="GitHub API rate limited. Please try again later.",
+                )
+            resp.raise_for_status()
+            data = resp.json()
+    except httpx.TimeoutException:
+        raise HTTPException(status_code=502, detail="Timeout contacting GitHub API.")
+    except httpx.HTTPError as e:
+        raise HTTPException(status_code=502, detail=f"GitHub API error: {e}")
+
+    latest_tag = data.get("tag_name", "")
+    latest_version = latest_tag if latest_tag.startswith("v") else "v" + latest_tag
+    release_notes = data.get("body", "")
+
+    # Compare versions
+    try:
+        current_tuple = _parse_version(current_version)
+        latest_tuple = _parse_version(latest_version)
+        update_available = latest_tuple > current_tuple
+    except (ValueError, IndexError):
+        update_available = False
+
+    return {
+        "current_version": current_version,
+        "latest_version": latest_version,
+        "update_available": update_available,
+        "release_notes": release_notes,
+        "docker_available": _check_docker_available(),
+    }
+
+
+# ---------------------------------------------------------------------------
+# Apply Update — pull new image and restart via Docker
+# ---------------------------------------------------------------------------
+
+
+def _check_docker_available() -> bool:
+    """Return True if the Docker daemon socket / named pipe is reachable.
+
+    On Linux  – checks for the presence of /var/run/docker.sock.
+    On Windows – attempts a ``docker ps`` via the named pipe; a non‑error
+    exit confirms the daemon is alive.
+    """
+    if os.path.exists("/var/run/docker.sock"):
+        return True
+    if sys.platform == "win32":
+        # On Windows the container sees the host's named pipe mounted at
+        # \\.\pipe\docker_engine.  os.path.exists does not work on pipes,
+        # so we run a fast `docker ps` to confirm reachability.
+        import subprocess
+        env = os.environ.copy()
+        env["DOCKER_HOST"] = "npipe:////./pipe/docker_engine"
+        try:
+            r = subprocess.run(
+                ["docker", "ps", "-q"],
+                env=env,
+                capture_output=True,
+                timeout=10,
+            )
+            return r.returncode == 0
+        except (subprocess.SubprocessError, FileNotFoundError, OSError):
+            pass
+    return False
+
+
+@router.post("/apply-update")
+async def apply_update(
+    body: dict,
+    background_tasks: BackgroundTasks,
+    admin: dict = Depends(get_current_admin_or_owner),
+):
+    # Permission check
+    if admin["role"] != "owner":
+        config = _load_config()
+        if not config.get("allow_admins_update", False):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only the owner can apply updates.",
+            )
+
+    # Docker socket / named pipe check
+    if not _check_docker_available():
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Docker daemon is not reachable inside the container. "
+                   "Ensure the Docker socket or named pipe is mounted "
+                   "(see docker-compose.yml volume mounts).",
+        )
+
+    # Confirmation safety check
+    if not body.get("confirm"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Request body must include 'confirm': true",
+        )
+
+    # Lock check
+    if _update_lock.locked():
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="An update is already in progress.",
+        )
+
+    force = body.get("force", False)
+
+    # Start background task
+    background_tasks.add_task(_run_update, admin["id"])
+
+    return {"ok": True, "docker_available": True}
+
+
+
+# ---------------------------------------------------------------------------
+# Update Status — poll version and in-progress state
+# ---------------------------------------------------------------------------
+
+
+@router.get("/update-status")
+async def update_status(
+    admin: dict = Depends(get_current_admin_or_owner),
+):
+    version_path = os.path.join(BASE_DIR, "version.json")
+    try:
+        with open(version_path, "r") as f:
+            local = json.load(f)
+    except Exception:
+        local = {"version": "unknown"}
+    return {
+        "updating": _updating_in_progress,
+        "current_version": local.get("version", "0.0.0"),
+    }
+
+
+# ---------------------------------------------------------------------------
+# Background task helpers
+# ---------------------------------------------------------------------------
+
+
+async def _stream_output(stream, admin_id: int, stream_name: str):
+    """Read lines from a subprocess pipe and send each line to the admin's WebSocket."""
+    while True:
+        line = await stream.readline()
+        if not line:
+            break
+        text = line.decode(errors="replace").rstrip()
+        if text:
+            await admin_manager.send_to_user(admin_id, {
+                "type": "update_log",
+                "line": text,
+                "stream": stream_name,
+            })
+
+
+async def _run_update(admin_id: int) -> None:
+    """Background task: pull new Docker image and restart containers.
+
+    On Windows hosts the ``docker`` CLI is configured to connect via the
+    named pipe (``npipe:////./pipe/docker_engine``) instead of the Unix
+    socket.  The ``docker-compose.yml`` mount of ``\\.\pipe\docker_engine``
+    makes this work inside the container.
+    """
+    global _updating_in_progress
+
+    # Build the environment for the docker subprocess.
+    # On Windows the CLI must talk to the named pipe; on Linux the default
+    # socket path is fine (and may already be set by the Docker socket mount).
+    subprocess_env = os.environ.copy()
+    if sys.platform == "win32":
+        subprocess_env["DOCKER_HOST"] = "npipe:////./pipe/docker_engine"
+
+    async with _update_lock:
+        _updating_in_progress = True
+        try:
+            await admin_manager.send_to_user(admin_id, {
+                "type": "update_log",
+                "line": "Starting update process...",
+                "stream": "system",
+            })
+
+            # ── Step 1: docker compose pull ──
+            await admin_manager.send_to_user(admin_id, {
+                "type": "update_log",
+                "line": "Step 1/2: Pulling latest Docker images...",
+                "stream": "system",
+            })
+
+            proc = await asyncio.create_subprocess_exec(
+                "docker", "compose", "pull",
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+                start_new_session=True,
+                cwd="/app",
+                env=subprocess_env,
+            )
+
+            await asyncio.gather(
+                _stream_output(proc.stdout, admin_id, "stdout"),
+                _stream_output(proc.stderr, admin_id, "stderr"),
+            )
+            await proc.wait()
+
+            if proc.returncode != 0:
+                await admin_manager.send_to_user(admin_id, {
+                    "type": "update_log",
+                    "line": f"docker compose pull failed with exit code {proc.returncode}. Aborting update.",
+                    "stream": "system",
+                })
+                return
+
+            # ── Step 2: docker compose up -d ──
+            await admin_manager.send_to_user(admin_id, {
+                "type": "update_log",
+                "line": "Step 2/2: Recreating containers with new image...",
+                "stream": "system",
+            })
+
+            proc2 = await asyncio.create_subprocess_exec(
+                "docker", "compose", "up", "-d",
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+                start_new_session=True,
+                cwd="/app",
+                env=subprocess_env,
+            )
+
+            await asyncio.gather(
+                _stream_output(proc2.stdout, admin_id, "stdout"),
+                _stream_output(proc2.stderr, admin_id, "stderr"),
+            )
+            await proc2.wait()
+
+            # Send final message before server gets killed
+            await admin_manager.send_to_user(admin_id, {
+                "type": "update_log",
+                "line": "Update complete. Server restarting...",
+                "stream": "system",
+            })
+
+            # Brief delay to let the WebSocket message flush before container is killed
+            await asyncio.sleep(2)
+
+        except FileNotFoundError:
+            await admin_manager.send_to_user(admin_id, {
+                "type": "update_log",
+                "line": "Error: 'docker' command not found. Is Docker CLI installed in the container?",
+                "stream": "system",
+            })
+        except Exception as e:
+            await admin_manager.send_to_user(admin_id, {
+                "type": "update_log",
+                "line": f"Unexpected error: {type(e).__name__}: {e}",
+                "stream": "system",
+            })
+        finally:
+            _updating_in_progress = False

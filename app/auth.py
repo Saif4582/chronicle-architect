@@ -90,7 +90,7 @@ async def get_current_admin_or_owner(
 
 async def log_action(db, user_id: int, username: str, action: str, details: str = ""):
     from datetime import datetime
-    timestamp = datetime.utcnow().isoformat()
+    timestamp = datetime.now(timezone.utc).isoformat()
     await db.execute(
         "INSERT INTO logs (timestamp, user_id, username, action, details) VALUES (?, ?, ?, ?, ?)",
         (timestamp, user_id, username, action, details),

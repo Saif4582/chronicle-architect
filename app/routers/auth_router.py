@@ -6,6 +6,7 @@ from app.database import get_db
 from app.auth import hash_password, verify_password, create_jwt, get_current_user, log_action
 from app.config import get_settings
 from app.models import UserCreate, UserLogin, TokenResponse, SetupResponse, UserProfileUpdate
+from app.ws_manager import admin_manager
 
 LOCKOUT_THRESHOLD = 5
 LOCKOUT_DURATION_MINUTES = 30
@@ -110,17 +111,29 @@ async def login(body: UserLogin, request: Request, db=Depends(get_db)):
     )
     await db.commit()
 
-    # Log action
-    last_ip = request.client.host if request.client else "unknown"
+    # Read real client IP from X-Forwarded-For or X-Real-IP headers
+    forwarded = request.headers.get("x-forwarded-for", "")
+    if forwarded:
+        last_ip = forwarded.split(",")[0].strip()
+    else:
+        last_ip = request.headers.get("x-real-ip", "")
+        if not last_ip:
+            last_ip = request.client.host if request.client else "unknown"
+
     await log_action(db, user_dict["id"], user_dict["username"], "login_success", f"Successful login from {last_ip}")
 
     # Update last login info
     last_ua = (request.headers.get("user-agent", "") or "")[:200]
     await db.execute(
-        "UPDATE users SET last_ip = ?, last_user_agent = ? WHERE id = ?",
-        (last_ip, last_ua, user_dict["id"]),
+        "UPDATE users SET last_ip = ?, last_user_agent = ?, last_login_at = ?, last_active_at = ? WHERE id = ?",
+        (last_ip, last_ua, datetime.now(timezone.utc).isoformat(), datetime.now(timezone.utc).isoformat(), user_dict["id"]),
     )
     await db.commit()
+
+    # Notify admin panel viewers that this user's activity status changed
+    await admin_manager.broadcast("users", {"type": "data_changed", "channel": "users"})
+    await admin_manager.broadcast("tokens", {"type": "data_changed", "channel": "tokens"})
+    await admin_manager.broadcast("logs", {"type": "data_changed", "channel": "logs"})
 
     settings = get_settings()
     admin_config = _load_admin_config()
@@ -227,4 +240,8 @@ async def logout(user: dict = Depends(get_current_user), db=Depends(get_db)):
     now = datetime.now(timezone.utc).isoformat()
     await db.execute("UPDATE users SET last_logout_at = ? WHERE id = ?", (now, user["id"]))
     await db.commit()
+    await log_action(db, user["id"], user["username"], "logout", None)
+    await admin_manager.broadcast("users", {"type": "data_changed", "channel": "users"})
+    await admin_manager.broadcast("tokens", {"type": "data_changed", "channel": "tokens"})
+    await admin_manager.broadcast("logs", {"type": "data_changed", "channel": "logs"})
     return {"ok": True}

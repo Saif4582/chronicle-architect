@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query, Request
 import json
 from app.database import get_db
 from app.auth import get_current_user
-from app.models import WikiEntryCreate, WikiEntryUpdate, WikiEntryResponse
+from app.models import WikiEntryCreate, WikiEntryUpdate, WikiEntryResponse, WikiReorderRequest
 
 router = APIRouter(prefix="")
 
@@ -49,12 +49,12 @@ async def list_wiki_entries(
 
     if category is not None:
         cursor = await db.execute(
-            "SELECT * FROM wiki_entries WHERE project_id = ? AND category = ? ORDER BY name ASC",
+            "SELECT * FROM wiki_entries WHERE project_id = ? AND category = ? ORDER BY position ASC, name ASC",
             (project_id, category),
         )
     else:
         cursor = await db.execute(
-            "SELECT * FROM wiki_entries WHERE project_id = ? ORDER BY name ASC",
+            "SELECT * FROM wiki_entries WHERE project_id = ? ORDER BY position ASC, name ASC",
             (project_id,),
         )
     rows = await cursor.fetchall()
@@ -64,9 +64,20 @@ async def list_wiki_entries(
         parent_ids = []
         if entry.get("parents"):
             try:
-                parent_ids = json.loads(entry["parents"])
+                parsed = json.loads(entry["parents"])
+                if isinstance(parsed, list):
+                    parent_ids = [int(x) for x in parsed]
+                elif isinstance(parsed, str):
+                    parent_ids = [int(x.strip()) for x in parsed.split(",") if x.strip()]
+                elif isinstance(parsed, (int, float)):
+                    parent_ids = [int(parsed)]
+                else:
+                    parent_ids = []
             except:
-                parent_ids = []
+                try:
+                    parent_ids = [int(x.strip()) for x in entry["parents"].split(",") if x.strip()]
+                except:
+                    parent_ids = []
         if entry.get("parent_id") and entry["parent_id"] not in parent_ids:
             parent_ids.append(entry["parent_id"])
         entry["parent_ids"] = parent_ids
@@ -103,10 +114,18 @@ async def create_wiki_entry(project_id: int, body: WikiEntryCreate, user: dict =
     if existing:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="An entry with this name already exists in this category.")
 
+    # Determine next position for new entry
+    cursor_pos = await db.execute(
+        "SELECT COALESCE(MAX(position), -1) + 1 as next_pos FROM wiki_entries WHERE project_id = ?",
+        (project_id,),
+    )
+    pos_row = await cursor_pos.fetchone()
+    next_pos = pos_row[0] if pos_row else 0
+
     parents_json = json.dumps(body.parents) if body.parents else None
     cursor = await db.execute(
-        "INSERT INTO wiki_entries (project_id, name, category, parent_id, content, metadata_json, parents) VALUES (?, ?, ?, ?, ?, ?, ?)",
-        (project_id, body.name, body.category, body.parent_id, body.content, body.metadata_json, parents_json),
+        "INSERT INTO wiki_entries (project_id, name, category, parent_id, content, metadata_json, parents, position) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        (project_id, body.name, body.category, body.parent_id, body.content, body.metadata_json, parents_json, next_pos),
     )
     await db.commit()
     entry_id = cursor.lastrowid
@@ -116,15 +135,51 @@ async def create_wiki_entry(project_id: int, body: WikiEntryCreate, user: dict =
     return dict(entry)
 
 
+@router.put("/api/projects/{project_id}/wiki/reorder")
+async def reorder_wiki_entries(
+    project_id: int,
+    body: WikiReorderRequest,
+    user: dict = Depends(get_current_user),
+    db=Depends(get_db),
+):
+    # Verify project ownership (any project member can reorder)
+    cursor = await db.execute("SELECT * FROM projects WHERE id = ?", (project_id,))
+    project = await cursor.fetchone()
+    if project is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
+    project_dict = dict(project)
+    if project_dict["user_id"] != user["id"]:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not your project")
+
+    for index, entry_id in enumerate(body.order):
+        await db.execute(
+            "UPDATE wiki_entries SET position = ? WHERE id = ? AND project_id = ?",
+            (index, entry_id, project_id),
+        )
+    await db.commit()
+    return {"ok": True}
+
+
 @router.get("/api/wiki/{id}", response_model=WikiEntryResponse)
 async def get_wiki_entry(id: int, user: dict = Depends(get_current_user), db=Depends(get_db)):
     entry_dict, _ = await _verify_wiki_ownership(id, user, db)
     parent_ids = []
     if entry_dict.get("parents"):
         try:
-            parent_ids = json.loads(entry_dict["parents"])
+            parsed = json.loads(entry_dict["parents"])
+            if isinstance(parsed, list):
+                parent_ids = [int(x) for x in parsed]
+            elif isinstance(parsed, str):
+                parent_ids = [int(x.strip()) for x in parsed.split(",") if x.strip()]
+            elif isinstance(parsed, (int, float)):
+                parent_ids = [int(parsed)]
+            else:
+                parent_ids = []
         except:
-            parent_ids = []
+            try:
+                parent_ids = [int(x.strip()) for x in entry_dict["parents"].split(",") if x.strip()]
+            except:
+                parent_ids = []
     if entry_dict.get("parent_id") and entry_dict["parent_id"] not in parent_ids:
         parent_ids.append(entry_dict["parent_id"])
     entry_dict["parent_ids"] = parent_ids
@@ -163,8 +218,14 @@ async def update_wiki_entry(id: int, body: WikiEntryUpdate, user: dict = Depends
                 detail="An entry with this name already exists in that category.",
             )
 
-    new_parents = body.parents if body.parents is not None else entry_dict.get("parents")
-    parents_json = json.dumps(new_parents) if new_parents else None
+    if body.parents is not None:
+        new_parents = body.parents
+        parents_json = json.dumps(new_parents) if len(new_parents) > 0 else None
+        # Keep parent_id in sync with parents array
+        new_parent_id = new_parents[0] if len(new_parents) > 0 else None
+    else:
+        new_parents = entry_dict.get("parents")
+        parents_json = json.dumps(new_parents) if new_parents else None
     await db.execute(
         "UPDATE wiki_entries SET name = ?, category = ?, parent_id = ?, content = ?, metadata_json = ?, parents = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
         (new_name, new_category, new_parent_id, new_content, new_metadata_json, parents_json, id),

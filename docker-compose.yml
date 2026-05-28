@@ -5,5 +5,19 @@ services:
     ports:
       - "8000:8000"
     volumes:
+      # Docker socket / named-pipe mounts — enable the Admin Update tab
+      # to perform docker compose pull && docker compose up -d from
+      # within the container.
+      #
+      #   • Linux hosts (native / WSL2 backend):
+      #     /var/run/docker.sock is the standard Unix socket.
+      #
+      #   • Windows hosts (Docker Desktop, Hyper-V / named-pipe backend):
+      #     \\.\pipe\docker_engine is the Windows named pipe.  Docker
+      #     Desktop for Windows exposes the daemon on both transports
+      #     simultaneously, so mounting both guarantees one‑click updates
+      #     work regardless of the backend.
+      - /var/run/docker.sock:/var/run/docker.sock
+      - \\.\pipe\docker_engine:\\.\pipe\docker_engine
       - ./data:/app/data
     restart: unless-stopped

@@ -69,6 +69,146 @@ async def init_db() -> None:
         )
         await db.commit()
 
+        # New tables for AI Chat System and User Communication
+        await db.executescript(
+            """
+            CREATE TABLE IF NOT EXISTS ai_endpoints (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                owner_user_id INTEGER NOT NULL,
+                name TEXT NOT NULL,
+                base_url TEXT NOT NULL,
+                api_key_encrypted TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (owner_user_id) REFERENCES users(id) ON DELETE CASCADE
+            );
+
+            CREATE TABLE IF NOT EXISTS ai_endpoint_models (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                endpoint_id INTEGER NOT NULL,
+                model_name TEXT NOT NULL,
+                enabled INTEGER NOT NULL DEFAULT 1,
+                multiplier_requests REAL NOT NULL DEFAULT 1.0,
+                multiplier_tokens REAL NOT NULL DEFAULT 1.0,
+                max_context_tokens INTEGER DEFAULT NULL,
+                FOREIGN KEY (endpoint_id) REFERENCES ai_endpoints(id) ON DELETE CASCADE,
+                UNIQUE(endpoint_id, model_name)
+            );
+
+            CREATE TABLE IF NOT EXISTS ai_endpoint_users (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                endpoint_id INTEGER NOT NULL,
+                user_id INTEGER NOT NULL,
+                limit_type TEXT NOT NULL DEFAULT 'requests',
+                limit_value_requests INTEGER DEFAULT NULL,
+                limit_value_tokens INTEGER DEFAULT NULL,
+                reset_schedule TEXT NOT NULL DEFAULT 'daily',
+                reset_time TEXT DEFAULT NULL,
+                is_shared_pool INTEGER NOT NULL DEFAULT 0,
+                shared_pool_id INTEGER DEFAULT NULL,
+                FOREIGN KEY (endpoint_id) REFERENCES ai_endpoints(id) ON DELETE CASCADE,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+                UNIQUE(endpoint_id, user_id)
+            );
+
+            CREATE TABLE IF NOT EXISTS ai_usage (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                endpoint_id INTEGER NOT NULL,
+                user_id INTEGER NOT NULL,
+                model_name TEXT NOT NULL,
+                request_count INTEGER NOT NULL DEFAULT 0,
+                token_count INTEGER NOT NULL DEFAULT 0,
+                recorded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                period_start TEXT NOT NULL,
+                FOREIGN KEY (endpoint_id) REFERENCES ai_endpoints(id) ON DELETE CASCADE,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            );
+            CREATE INDEX IF NOT EXISTS idx_ai_usage_user_period ON ai_usage(user_id, period_start);
+            CREATE INDEX IF NOT EXISTS idx_ai_usage_endpoint ON ai_usage(endpoint_id, period_start);
+
+            CREATE TABLE IF NOT EXISTS ai_chat_sessions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                endpoint_id INTEGER NOT NULL,
+                model_name TEXT NOT NULL,
+                title TEXT NOT NULL DEFAULT 'New Chat',
+                context_selection TEXT DEFAULT '{}',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+                FOREIGN KEY (endpoint_id) REFERENCES ai_endpoints(id) ON DELETE CASCADE
+            );
+
+            CREATE TABLE IF NOT EXISTS ai_chat_messages (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                session_id INTEGER NOT NULL,
+                role TEXT NOT NULL CHECK(role IN ('user', 'assistant', 'system')),
+                content TEXT NOT NULL,
+                token_count INTEGER DEFAULT 0,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (session_id) REFERENCES ai_chat_sessions(id) ON DELETE CASCADE
+            );
+
+            CREATE TABLE IF NOT EXISTS dm_messages (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                sender_id INTEGER NOT NULL,
+                recipient_id INTEGER NOT NULL,
+                content TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                is_deleted INTEGER NOT NULL DEFAULT 0,
+                FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE,
+                FOREIGN KEY (recipient_id) REFERENCES users(id) ON DELETE CASCADE
+            );
+            CREATE INDEX IF NOT EXISTS idx_dm_conversation ON dm_messages(sender_id, recipient_id);
+
+            CREATE TABLE IF NOT EXISTS chat_groups (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                creator_id INTEGER NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (creator_id) REFERENCES users(id) ON DELETE CASCADE
+            );
+
+            CREATE TABLE IF NOT EXISTS chat_group_members (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                group_id INTEGER NOT NULL,
+                user_id INTEGER NOT NULL,
+                status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending', 'accepted', 'declined', 'removed')),
+                joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (group_id) REFERENCES chat_groups(id) ON DELETE CASCADE,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+                UNIQUE(group_id, user_id)
+            );
+
+            CREATE TABLE IF NOT EXISTS chat_group_messages (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                group_id INTEGER NOT NULL,
+                sender_id INTEGER NOT NULL,
+                content TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                is_deleted INTEGER NOT NULL DEFAULT 0,
+                FOREIGN KEY (group_id) REFERENCES chat_groups(id) ON DELETE CASCADE,
+                FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE
+            );
+
+            CREATE TABLE IF NOT EXISTS global_chat_messages (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                sender_id INTEGER NOT NULL,
+                content TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                is_deleted INTEGER NOT NULL DEFAULT 0,
+                FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE
+            );
+            """
+        )
+        await db.commit()
+
+        # Migration: add reasoning to ai_chat_messages if missing
+        try:
+            await db.execute("ALTER TABLE ai_chat_messages ADD COLUMN reasoning TEXT DEFAULT NULL")
+        except:
+            pass  # Column already exists
+
         # Migration: add metadata_json to wiki_entries if missing
         try:
             await db.execute("ALTER TABLE wiki_entries ADD COLUMN metadata_json TEXT DEFAULT '{}'")
@@ -194,9 +334,91 @@ async def init_db() -> None:
         except:
             pass  # Column already exists
 
+        # Migration: add last_login_at to users if missing
+        try:
+            await db.execute("ALTER TABLE users ADD COLUMN last_login_at TEXT DEFAULT NULL")
+        except:
+            pass  # Column already exists
+
         # Migration: add parents column to wiki_entries if missing
         try:
             await db.execute("ALTER TABLE wiki_entries ADD COLUMN parents TEXT DEFAULT NULL")
+        except:
+            pass  # Column already exists
+
+        # Migration: add position column to wiki_entries if missing
+        try:
+            await db.execute("ALTER TABLE wiki_entries ADD COLUMN position INTEGER DEFAULT 0")
+        except:
+            pass  # Column already exists
+
+        # Migration: create ai_endpoint_configs table if missing
+        try:
+            await db.execute("""
+                CREATE TABLE IF NOT EXISTS ai_endpoint_configs (
+                    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+                    endpoint_id     INTEGER NOT NULL,
+                    owner_user_id   INTEGER NOT NULL,
+                    name            TEXT    NOT NULL,
+                    limit_type      TEXT    NOT NULL DEFAULT 'requests',
+                    limit_value_requests INTEGER DEFAULT NULL,
+                    limit_value_tokens   INTEGER DEFAULT NULL,
+                    reset_schedule  TEXT    NOT NULL DEFAULT 'daily',
+                    reset_time      TEXT    DEFAULT NULL,
+                    is_shared_pool  INTEGER NOT NULL DEFAULT 0,
+                    created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (endpoint_id)   REFERENCES ai_endpoints(id) ON DELETE CASCADE,
+                    FOREIGN KEY (owner_user_id) REFERENCES users(id)      ON DELETE CASCADE
+                )
+            """)
+            await db.execute("""
+                CREATE INDEX IF NOT EXISTS idx_ai_endpoint_configs_endpoint
+                    ON ai_endpoint_configs(endpoint_id)
+            """)
+        except:
+            pass
+
+        # Migration: add last_accessed_at to ai_endpoint_configs if missing
+        try:
+            await db.execute("ALTER TABLE ai_endpoint_configs ADD COLUMN last_accessed_at TEXT DEFAULT NULL")
+        except:
+            pass  # Column already exists
+
+        # Migration: add is_admin_endpoint to ai_endpoints if missing
+        try:
+            await db.execute("ALTER TABLE ai_endpoints ADD COLUMN is_admin_endpoint INTEGER NOT NULL DEFAULT 0")
+        except:
+            pass  # Column already exists
+
+        # Update existing admin/owner-created endpoints (separate try block so it always runs)
+        try:
+            await db.execute(
+                "UPDATE ai_endpoints SET is_admin_endpoint = 1 "
+                "WHERE owner_user_id IN (SELECT id FROM users WHERE role IN ('admin', 'owner'))"
+            )
+        except:
+            pass
+
+        # Migration: create ai_endpoint_config_users bridge table if missing
+        try:
+            await db.execute("""
+                CREATE TABLE IF NOT EXISTS ai_endpoint_config_users (
+                    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+                    config_id       INTEGER NOT NULL,
+                    user_id         INTEGER NOT NULL,
+                    created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (config_id) REFERENCES ai_endpoint_configs(id) ON DELETE CASCADE,
+                    FOREIGN KEY (user_id)   REFERENCES users(id)             ON DELETE CASCADE,
+                    UNIQUE(config_id, user_id)
+                )
+            """)
+        except:
+            pass
+
+        # Migration: add config_id to ai_chat_sessions if missing
+        try:
+            await db.execute("ALTER TABLE ai_chat_sessions ADD COLUMN config_id INTEGER DEFAULT NULL")
         except:
             pass  # Column already exists
 
