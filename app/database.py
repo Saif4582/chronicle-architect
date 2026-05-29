@@ -352,6 +352,25 @@ async def init_db() -> None:
         except:
             pass  # Column already exists
 
+        # Migration: add indexes to wiki_entries
+        try:
+            await db.execute("CREATE INDEX IF NOT EXISTS idx_wiki_category_position ON wiki_entries(category, position)")
+            await db.commit()
+        except:
+            pass  # Index already exists
+
+        try:
+            await db.execute("CREATE INDEX IF NOT EXISTS idx_wiki_project ON wiki_entries(project_id)")
+            await db.commit()
+        except:
+            pass  # Index already exists
+
+        try:
+            await db.execute("CREATE INDEX IF NOT EXISTS idx_wiki_parent_id ON wiki_entries(parent_id)")
+            await db.commit()
+        except:
+            pass  # Index already exists
+
         # Migration: create ai_endpoint_configs table if missing
         try:
             await db.execute("""

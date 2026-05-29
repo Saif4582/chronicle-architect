@@ -2,7 +2,7 @@
 
 A self‑hosted, private novel writing studio with rich‑text editing, world‑building wiki, AI chat, user communication, and full admin panel. Lightweight, secure, and accessible anywhere via Tailscale.
 
-## Current Features (v0.5.0)
+## Current Features (v0.5.0.1)
 
 ### 📚 Projects, Volumes & Chapters
 - Full hierarchical structure: Project → Volume → Chapter.

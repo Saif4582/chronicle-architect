@@ -165,6 +165,14 @@ class ReorderRequest(BaseModel):
 
 class WikiReorderRequest(BaseModel):
     order: list[int]
+    category: Optional[str] = None
+
+
+class WikiMoveRequest(BaseModel):
+    entry_id: int
+    category: Optional[str] = None
+    parent_ids: Optional[List[int]] = None
+    position: Optional[int] = None
 
 
 # --- AI Endpoint Models ---

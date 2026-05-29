@@ -1,0 +1,771 @@
+{
+  "reportMetadata": {
+    "title": "Phase 2 – loadAll Refactor: Wiki Core Group Deep Analysis",
+    "subtitle": "Feasibility of Partial Refactor for sidebar, renderForm, renderDetailView, wikiTiptapEditors",
+    "date": "2026-05-29",
+    "sourceFile": "static/index.html",
+    "wikiClosureBounds": "lines 11695–14465",
+    "methodology": "Four independent sub-agents (Call Graph Mapper, Dependency Matrix, Side-Effect Inventory, Risk Verdict) analyzed the code; results consolidated by orchestrator with strict multi-step validation."
+  },
+  "dataFlow": {
+    "summary": "Complete map of every function that reads or writes each shared state variable in the wiki closure.",
+    "variables": [
+      {
+        "variable": "entries",
+        "declaration": { "line": 11704 },
+        "readFunctions": [
+          { "name": "renderSidebarContent", "line": 12951, "detail": "iterates entries to group by category and build tree" },
+          { "name": "buildWikiTree", "line": 12799, "detail": "receives catEntries and allEntries to build parent-child tree" },
+          { "name": "renderWikiTreeLevel", "line": 12840, "detail": "receives allEntries for cycle detection and entry lookups" },
+          { "name": "renderDetailView", "line": 13078, "detail": "reads entries via parent lookups in parent link handler (line 13229)" },
+          { "name": "renderForm", "line": 13249, "detail": "reads entries for available parents dropdown (lines 13387, 13425)" },
+          { "name": "handleSave", "line": 12261, "detail": "cycle prevention reads entries.find (line 12333)" },
+          { "name": "showDeleteCategoryModal", "line": 11847, "detail": "iterates entries to group by category (lines 11937-11941)" },
+          { "name": "render() IIFE (token fetch)", "line": 14317, "detail": "reads selectedEntry from entries for token count (line 14321)" },
+          { "name": "sidebar ondrop (category-header)", "line": 13032, "detail": "entries.find to locate source entry" },
+          { "name": "sidebar ondrop (main)", "line": 14023, "detail": "entries.find for draggedEntry, targetData (lines 14023, 14038)" },
+          { "name": "sidebar ondragover", "line": 13949, "detail": "entries.findIndex for noop check (lines 13949-13950)" },
+          { "name": "window.renderWikiDetailView", "line": 13675, "detail": "passed as parameter for parent link rendering" },
+          { "name": "render() (partial update detail view)", "line": 14284, "detail": "entries.find for parent link navigation (line 14284)" }
+        ],
+        "writeFunctions": [
+          { "name": "loadAll", "line": 11965, "detail": "entries = ents" },
+          { "name": "sidebar ondrop category-header", "line": 13036, "detail": "sourceEntry.category = catName (mutates entry object inside entries array)" },
+          { "name": "sidebar ondrop main (center zone)", "line": 14159, "detail": "entries = result (server response reassignment)" }
+        ],
+        "mutateInPlaceFunctions": [
+          { "name": "sidebar ondrop main (center zone)", "line": 14115, "detail": "entries.splice(draggedIdx, 1) — removes dragged entry" },
+          { "name": "sidebar ondrop main (center zone)", "line": 14140, "detail": "entries.splice(insertIdx, 0, draggedEntryClone) — re-inserts at new position" },
+          { "name": "sidebar ondrop main (fallback)", "line": 14207, "detail": "entries.filter to reorder, then splice to re-insert dragged entry" },
+          { "name": "sidebar ondrop category-header", "line": 13036, "detail": "sourceEntry.category = catName — mutates entry object property in-place" },
+          { "name": "sidebar ondrop main (center zone)", "line": 14119, "detail": "draggedEntryClone.category = targetCategory — mutates clone property" }
+        ]
+      },
+      {
+        "variable": "categories",
+        "declaration": { "line": 11705 },
+        "readFunctions": [
+          { "name": "renderForm", "line": 13252, "detail": "reads categories for dropdownCategories" },
+          { "name": "showDeleteCategoryModal", "line": 11853, "detail": "reads categories for dropdown" },
+          { "name": "render()", "line": 14365, "detail": "reads categories for dropdownCategories in editor init" }
+        ],
+        "writeFunctions": [
+          { "name": "loadAll", "line": 11966, "detail": "categories = cats" }
+        ],
+        "mutateInPlaceFunctions": []
+      },
+      {
+        "variable": "selectedEntry",
+        "declaration": { "line": 11708 },
+        "readFunctions": [
+          { "name": "renderWikiTreeLevel", "line": 12848, "detail": "isActive = selectedEntry && selectedEntry.id === entry.id" },
+          { "name": "render()", "line": 14263, "detail": "reads selectedEntry for conditional rendering" },
+          { "name": "render() IIFE (detail token fetch)", "line": 14318, "detail": "reads selectedEntry for async token count" },
+          { "name": "handleDelete", "line": 12422, "detail": "reads selectedEntry.id to compare with deleted entryId" }
+        ],
+        "writeFunctions": [
+          { "name": "resetForm", "line": 12110, "detail": "selectedEntry = null" },
+          { "name": "startNewEntry (dirty branch)", "line": 12139, "detail": "selectedEntry = null" },
+          { "name": "startNewEntry (clean branch)", "line": 12164, "detail": "selectedEntry = null" },
+          { "name": "editEntry", "line": 12192, "detail": "selectedEntry = entry" },
+          { "name": "viewEntry (dirty branch)", "line": 12245, "detail": "selectedEntry = entry" },
+          { "name": "viewEntry (clean branch)", "line": 12253, "detail": "selectedEntry = entry" },
+          { "name": "handleDelete", "line": 12423, "detail": "selectedEntry = null if matching id" }
+        ],
+        "mutateInPlaceFunctions": []
+      },
+      {
+        "variable": "editingEntry",
+        "declaration": { "line": 11709 },
+        "readFunctions": [
+          { "name": "renderForm", "line": 13250, "detail": "isNew = !editingEntry" },
+          { "name": "handleSave", "line": 12283, "detail": "reads editingEntry.id (line 12283) and checks editingEntry truthiness (line 12362)" },
+          { "name": "renderForm", "line": 13425, "detail": "reads editingEntry.id to exclude from available parents" },
+          { "name": "renderForm", "line": 13611, "detail": "reads editingEntry.name for form header" },
+          { "name": "render()", "line": 14261, "detail": "reads editingEntry for conditional render" },
+          { "name": "render()", "line": 14362, "detail": "showForm = !!(editingEntry || creatingNew)" }
+        ],
+        "writeFunctions": [
+          { "name": "resetForm", "line": 12109, "detail": "editingEntry = null" },
+          { "name": "startNewEntry (dirty branch)", "line": 12138, "detail": "editingEntry = null" },
+          { "name": "startNewEntry (clean branch)", "line": 12163, "detail": "editingEntry = null" },
+          { "name": "editEntry", "line": 12191, "detail": "editingEntry = entry" },
+          { "name": "viewEntry (dirty branch)", "line": 12246, "detail": "editingEntry = null" },
+          { "name": "viewEntry (clean branch)", "line": 12254, "detail": "editingEntry = null" }
+        ],
+        "mutateInPlaceFunctions": []
+      },
+      {
+        "variable": "creatingNew",
+        "declaration": { "line": 11710 },
+        "readFunctions": [
+          { "name": "render()", "line": 14262, "detail": "reads for conditional render branch" },
+          { "name": "render() IIFE", "line": 14318, "detail": "reads for token fetch guard" },
+          { "name": "render()", "line": 14362, "detail": "showForm = !!(editingEntry || creatingNew)" }
+        ],
+        "writeFunctions": [
+          { "name": "resetForm", "line": 12111, "detail": "creatingNew = false" },
+          { "name": "startNewEntry (dirty branch)", "line": 12140, "detail": "creatingNew = true" },
+          { "name": "startNewEntry (clean branch)", "line": 12165, "detail": "creatingNew = true" },
+          { "name": "editEntry", "line": 12231, "detail": "creatingNew = false" },
+          { "name": "viewEntry (dirty branch)", "line": 12247, "detail": "creatingNew = false" },
+          { "name": "viewEntry (clean branch)", "line": 12255, "detail": "creatingNew = false" }
+        ],
+        "mutateInPlaceFunctions": []
+      },
+      {
+        "variable": "formName",
+        "declaration": { "line": 11711 },
+        "readFunctions": [
+          { "name": "computeWikiFormCounts", "line": 12001, "detail": "reads formName for word count" },
+          { "name": "handleSave", "line": 12263, "detail": "reads formName.trim() for validation and body" },
+          { "name": "renderForm", "line": 13301, "detail": "reads formName as input value" },
+          { "name": "render()", "line": 14350, "detail": "reads formName to set input value post-render" }
+        ],
+        "writeFunctions": [
+          { "name": "resetForm", "line": 12112, "detail": "formName = ''" },
+          { "name": "startNewEntry (dirty branch)", "line": 12141, "detail": "formName = ''" },
+          { "name": "startNewEntry (clean branch)", "line": 12166, "detail": "formName = ''" },
+          { "name": "editEntry", "line": 12193, "detail": "formName = entry.name || ''" },
+          { "name": "renderForm oninput", "line": 13302, "detail": "formName = e.target.value" }
+        ],
+        "mutateInPlaceFunctions": []
+      },
+      {
+        "variable": "formCategory",
+        "declaration": { "line": 11712 },
+        "readFunctions": [
+          { "name": "onCategoryChange", "line": 12435, "detail": "const oldCat = formCategory" },
+          { "name": "saveTemplate", "line": 12646, "detail": "const cat = formCategory.trim()" },
+          { "name": "resetTemplate", "line": 12699, "detail": "const cat = formCategory.trim()" },
+          { "name": "renderForm", "line": 13257, "detail": "reads for subcatNames resolution and selected option match" },
+          { "name": "renderForm", "line": 13283, "detail": "reads for selected option match" },
+          { "name": "editEntry", "line": 12209, "detail": "reads for presetNames" },
+          { "name": "editEntry", "line": 12235, "detail": "reads for _showCustomCategory check" },
+          { "name": "addCustomSubcategory", "line": 12482, "detail": "reads for effective subcats" },
+          { "name": "renameCustomSubcategory", "line": 12538, "detail": "reads for effective subcats" },
+          { "name": "renderForm", "line": 13466, "detail": "reads to show template buttons" },
+          { "name": "render()", "line": 14367, "detail": "reads for subcatNames init" }
+        ],
+        "writeFunctions": [
+          { "name": "resetForm", "line": 12113, "detail": "formCategory = ''" },
+          { "name": "startNewEntry (dirty branch)", "line": 12142, "detail": "formCategory = 'Characters'" },
+          { "name": "startNewEntry (clean branch)", "line": 12167, "detail": "formCategory = 'Characters'" },
+          { "name": "editEntry", "line": 12194, "detail": "formCategory = entry.category || ''" },
+          { "name": "onCategoryChange", "line": 12436, "detail": "formCategory = newCat" },
+          { "name": "renderForm onchange (custom)", "line": 13318, "detail": "formCategory = ''" },
+          { "name": "renderForm oninput (custom input)", "line": 13333, "detail": "formCategory = e.target.value" }
+        ],
+        "mutateInPlaceFunctions": []
+      },
+      {
+        "variable": "formContent",
+        "declaration": { "line": 11715 },
+        "readFunctions": [
+          { "name": "computeWikiFormCounts", "line": 12001, "detail": "reads formContent for word count" },
+          { "name": "scheduleTokenFetch", "line": 12028, "detail": "reads formContent for token fetch" },
+          { "name": "handleSave", "line": 12356, "detail": "reads formContent for request body" },
+          { "name": "renderForm", "line": 13461, "detail": "reads formContent for textarea value" },
+          { "name": "render()", "line": 14353, "detail": "reads formContent to set textarea value post-render" }
+        ],
+        "writeFunctions": [
+          { "name": "resetForm", "line": 12116, "detail": "formContent = ''" },
+          { "name": "startNewEntry (dirty branch)", "line": 12145, "detail": "formContent = ''" },
+          { "name": "startNewEntry (clean branch)", "line": 12170, "detail": "formContent = ''" },
+          { "name": "editEntry", "line": 12197, "detail": "formContent = entry.content || ''" },
+          { "name": "renderForm oninput", "line": 13457, "detail": "formContent = e.target.value" }
+        ],
+        "mutateInPlaceFunctions": []
+      },
+      {
+        "variable": "formMetadata",
+        "declaration": { "line": 11716 },
+        "readFunctions": [
+          { "name": "computeWikiFormCounts", "line": 12002, "detail": "reads sub-properties (ai_context_snippet, private_notepad, subcategories, attributes)" },
+          { "name": "scheduleTokenFetch", "line": 12027, "detail": "reads sub-properties for token fetch" },
+          { "name": "handleSave", "line": 12296, "detail": "reads .private_notepad, .subcategories" },
+          { "name": "saveTemplate", "line": 12652, "detail": "reads .subcategories" },
+          { "name": "resetTemplate", "line": 12707, "detail": "reads .subcategories" },
+          { "name": "initNotepadEditor", "line": 12787, "detail": "reads .private_notepad for editor content" },
+          { "name": "renderForm", "line": 13270, "detail": "reads .subcategories, .attributes, .ai_context_snippet" },
+          { "name": "setSubcategoryContent", "line": 11748, "detail": "reads formMetadata.subcategories[key]" },
+          { "name": "render()", "line": 14359, "detail": "reads .ai_context_snippet post-render" },
+          { "name": "render()", "line": 14377, "detail": "reads .subcategories for editor init" }
+        ],
+        "writeFunctions": [
+          { "name": "resetForm", "line": 12117, "detail": "resets all fields" },
+          { "name": "startNewEntry (dirty branch)", "line": 12146, "detail": "formMetadata = { ... }" },
+          { "name": "startNewEntry (clean branch)", "line": 12171, "detail": "formMetadata = { ... }" },
+          { "name": "editEntry", "line": 12199, "detail": "formMetadata = JSON.parse(entry.metadata_json) with defaults" },
+          { "name": "handleSave", "line": 12298, "detail": ".private_notepad = editor.getHTML()" },
+          { "name": "setSubcategoryContent", "line": 11754, "detail": ".subcategories[key] = JSON string or HTML" },
+          { "name": "onCategoryChange", "line": 12445, "detail": ".subcategories = newSubcats" },
+          { "name": "onCategoryChange", "line": 12452, "detail": ".attributes = newAttrs" },
+          { "name": "addCustomSubcategory", "line": 12498, "detail": ".subcategories[key] = JSON string" },
+          { "name": "renameCustomSubcategory", "line": 12566, "detail": ".subcategories[key] = updated JSON string" },
+          { "name": "removeCustomSubcategory", "line": 12596, "detail": "delete .subcategories[key]" },
+          { "name": "saveTemplate", "line": 12658, "detail": ".subcategories[name] = editor.getHTML()" },
+          { "name": "saveTemplate", "line": 12682, "detail": ".subcategories[sc.name] = content" },
+          { "name": "saveTemplate", "line": 12684, "detail": "delete .subcategories[sc.key]" },
+          { "name": "initNotepadEditor", "line": 12790, "detail": ".private_notepad = ed.getHTML()" },
+          { "name": "renderForm oninput (attr)", "line": 13551, "detail": ".attributes[name] = e.target.value" },
+          { "name": "renderForm oninput (snippet)", "line": 13571, "detail": ".ai_context_snippet = e.target.value" }
+        ],
+        "mutateInPlaceFunctions": [
+          { "name": "setSubcategoryContent", "line": 11754, "detail": "mutates .subcategories in-place (key assignment)" },
+          { "name": "handleSave", "line": 12303, "detail": "setSubcategoryContent mutates .subcategories" },
+          { "name": "handleSave", "line": 12309, "detail": "formMetadata.subcategories[name] = ..." },
+          { "name": "addCustomSubcategory", "line": 12498, "detail": "mutates .subcategories by adding new key" },
+          { "name": "removeCustomSubcategory", "line": 12596, "detail": "deletes key from .subcategories" },
+          { "name": "renameCustomSubcategory", "line": 12566, "detail": "mutates .subcategories[key] in-place" },
+          { "name": "renderForm oninput (attr)", "line": 13551, "detail": "mutates .attributes in-place" },
+          { "name": "renderForm oninput (snippet)", "line": 13571, "detail": "mutates .ai_context_snippet in-place" }
+        ]
+      },
+      {
+        "variable": "formParentIds",
+        "declaration": { "line": 11714 },
+        "readFunctions": [
+          { "name": "handleSave", "line": 12325, "detail": "reads for cycle prevention and request body" },
+          { "name": "renderForm", "line": 13377, "detail": "reads for chip drag reorder" },
+          { "name": "renderForm", "line": 13417, "detail": "reads for filter operation" },
+          { "name": "renderForm", "line": 13425, "detail": "reads for available parents filter" },
+          { "name": "renderForm", "line": 13430, "detail": "reads .length for conditional rendering" },
+          { "name": "renderForm", "line": 13386, "detail": "reads in .map() to render chips" }
+        ],
+        "writeFunctions": [
+          { "name": "resetForm", "line": 12115, "detail": "formParentIds = []" },
+          { "name": "startNewEntry (dirty branch)", "line": 12144, "detail": "formParentIds = []" },
+          { "name": "startNewEntry (clean branch)", "line": 12169, "detail": "formParentIds = []" },
+          { "name": "editEntry", "line": 12196, "detail": "formParentIds = entry.parent_ids || [entry.parent_id]" }
+        ],
+        "mutateInPlaceFunctions": [
+          { "name": "renderForm ondrop (chip reorder)", "line": 13380, "detail": "formParentIds.splice(oldIndex, 1) and .splice(adjustedNewIndex, 0, draggedId)" },
+          { "name": "renderForm onclick (remove chip)", "line": 13417, "detail": "formParentIds = formParentIds.filter(...)" },
+          { "name": "renderForm onchange (add parent)", "line": 13437, "detail": "formParentIds.push(val)" }
+        ]
+      },
+      {
+        "variable": "customSubcats",
+        "declaration": { "line": 11722 },
+        "readFunctions": [
+          { "name": "addCustomSubcategory", "line": 12484, "detail": "reads for duplicate check" },
+          { "name": "renameCustomSubcategory", "line": 12540, "detail": "reads for duplicate check and find" },
+          { "name": "removeCustomSubcategory", "line": 12597, "detail": "reads for filter and find" },
+          { "name": "saveTemplate", "line": 12666, "detail": "reads for custom names collection" },
+          { "name": "resetTemplate", "line": 12706, "detail": "reads to rebuild from formMetadata" },
+          { "name": "renderForm", "line": 13264, "detail": "reads for allSubcatNames construction" },
+          { "name": "render()", "line": 14371, "detail": "reads for editor init" }
+        ],
+        "writeFunctions": [
+          { "name": "resetForm", "line": 12123, "detail": "customSubcats = []" },
+          { "name": "startNewEntry (dirty branch)", "line": 12152, "detail": "customSubcats = []" },
+          { "name": "startNewEntry (clean branch)", "line": 12177, "detail": "customSubcats = []" },
+          { "name": "editEntry", "line": 12207, "detail": "customSubcats = [] then pushed via loop" },
+          { "name": "onCategoryChange", "line": 12453, "detail": "customSubcats = []" },
+          { "name": "addCustomSubcategory", "line": 12499, "detail": "customSubcats.push({ key, name })" },
+          { "name": "removeCustomSubcategory", "line": 12597, "detail": "customSubcats = customSubcats.filter(...)" },
+          { "name": "saveTemplate", "line": 12686, "detail": "customSubcats = []" },
+          { "name": "resetTemplate", "line": 12706, "detail": "customSubcats = [] then rebuilt" }
+        ],
+        "mutateInPlaceFunctions": [
+          { "name": "editEntry", "line": 12226, "detail": "customSubcats.push({ key, name })" },
+          { "name": "renameCustomSubcategory", "line": 12554, "detail": "scEntry.name = trimmed — object property mutation" },
+          { "name": "addCustomSubcategory", "line": 12499, "detail": "customSubcats.push({ key, name })" }
+        ]
+      },
+      {
+        "variable": "wikiTiptapEditors",
+        "declaration": { "line": 11725 },
+        "readFunctions": [
+          { "name": "cleanupWikiEditors", "line": 11738, "detail": "iterates to destroy editors" },
+          { "name": "handleSave", "line": 12296, "detail": "iterates to gather editor content" },
+          { "name": "removeCustomSubcategory", "line": 12590, "detail": "iterates to find editor by id" },
+          { "name": "saveTemplate", "line": 12649, "detail": "iterates to sync editor content" },
+          { "name": "initWikiSubcategoryEditor", "line": 12729, "detail": "reads to check for existing editor (dedup)" },
+          { "name": "initNotepadEditor", "line": 12772, "detail": "reads to check for existing editor (dedup)" },
+          { "name": "render() retry block", "line": 14419, "detail": "reads to check for existing editors" }
+        ],
+        "writeFunctions": [
+          { "name": "cleanupWikiEditors", "line": 11741, "detail": "wikiTiptapEditors = []" },
+          { "name": "initWikiSubcategoryEditor", "line": 12760, "detail": "wikiTiptapEditors.push({ id, editor })" },
+          { "name": "initNotepadEditor", "line": 12795, "detail": "wikiTiptapEditors.push({ id, editor })" }
+        ],
+        "mutateInPlaceFunctions": [
+          { "name": "removeCustomSubcategory", "line": 12595, "detail": "wikiTiptapEditors = wikiTiptapEditors.filter(...) — removes destroyed editor" }
+        ]
+      },
+      {
+        "variable": "collapsedSubcategories",
+        "declaration": { "line": 11726 },
+        "readFunctions": [
+          { "name": "renderDetailView", "line": 13124, "detail": "reads 'detail:key' for collapse state" },
+          { "name": "renderForm", "line": 13485, "detail": "reads 'editor:key' for collapse state" },
+          { "name": "window.renderWikiDetailView", "line": 13721, "detail": "reads 'detail:rawName' for collapse state" },
+          { "name": "render() partial update", "line": 14267, "detail": "passed to renderWikiDetailView" },
+          { "name": "render() partial update", "line": 14273, "detail": "reads key for toggle" }
+        ],
+        "writeFunctions": [
+          { "name": "resetForm", "line": 12127, "detail": "collapsedSubcategories = {}" },
+          { "name": "startNewEntry (dirty branch)", "line": 12156, "detail": "collapsedSubcategories = {}" },
+          { "name": "startNewEntry (clean branch)", "line": 12181, "detail": "collapsedSubcategories = {}" },
+          { "name": "editEntry", "line": 12232, "detail": "collapsedSubcategories = {}" }
+        ],
+        "mutateInPlaceFunctions": [
+          { "name": "renderDetailView onclick", "line": 13131, "detail": "collapsedSubcategories['detail:' + rawName] = bool" },
+          { "name": "renderForm onclick", "line": 13514, "detail": "collapsedSubcategories['editor:' + key] = bool" },
+          { "name": "render() partial update onclick", "line": 14273, "detail": "collapsedSubcategories[subcatKey] = !collapsedSubcategories[subcatKey]" }
+        ]
+      },
+      {
+        "variable": "wikiFormDirty",
+        "declaration": { "line": 11730 },
+        "readFunctions": [
+          { "name": "goBack", "line": 11771, "detail": "reads to check unsaved changes" },
+          { "name": "goToProjects", "line": 11787, "detail": "reads to check unsaved changes" },
+          { "name": "startNewEntry", "line": 12135, "detail": "reads to check unsaved changes" },
+          { "name": "viewEntry", "line": 12242, "detail": "reads to check unsaved changes" }
+        ],
+        "writeFunctions": [
+          { "name": "resetForm", "line": 12129, "detail": "wikiFormDirty = false" },
+          { "name": "startNewEntry (dirty branch)", "line": 12158, "detail": "wikiFormDirty = false" },
+          { "name": "startNewEntry (clean branch)", "line": 12183, "detail": "wikiFormDirty = false" },
+          { "name": "editEntry", "line": 12236, "detail": "wikiFormDirty = false" },
+          { "name": "viewEntry (dirty branch)", "line": 12248, "detail": "wikiFormDirty = false" },
+          { "name": "viewEntry (clean branch)", "line": 12255, "detail": "wikiFormDirty = false" },
+          { "name": "handleSave (success)", "line": 12369, "detail": "wikiFormDirty = false" },
+          { "name": "addCustomSubcategory", "line": 12500, "detail": "wikiFormDirty = true" },
+          { "name": "renameCustomSubcategory", "line": 12568, "detail": "wikiFormDirty = true" },
+          { "name": "removeCustomSubcategory", "line": 12598, "detail": "wikiFormDirty = true" },
+          { "name": "initNotepadEditor onUpdate", "line": 12791, "detail": "wikiFormDirty = true" },
+          { "name": "renderForm oninput (name)", "line": 13302, "detail": "wikiFormDirty = true" },
+          { "name": "renderForm onchange (category select)", "line": 13315, "detail": "wikiFormDirty = true" },
+          { "name": "renderForm oninput (custom category)", "line": 13333, "detail": "wikiFormDirty = true" },
+          { "name": "renderForm ondrop (chip reorder)", "line": 13383, "detail": "wikiFormDirty = true" },
+          { "name": "renderForm onclick (remove chip)", "line": 13418, "detail": "wikiFormDirty = true" },
+          { "name": "renderForm onchange (add parent)", "line": 13438, "detail": "wikiFormDirty = true" },
+          { "name": "renderForm oninput (content)", "line": 13458, "detail": "wikiFormDirty = true" },
+          { "name": "renderForm oninput (attr)", "line": 13552, "detail": "wikiFormDirty = true" },
+          { "name": "renderForm oninput (snippet)", "line": 13572, "detail": "wikiFormDirty = true" },
+          { "name": "render() editor init callbacks", "line": 14403, "detail": "wikiFormDirty = true in subcat editor onUpdate (and lines 14431, 14455)" }
+        ],
+        "mutateInPlaceFunctions": []
+      },
+      {
+        "variable": "dragWikiEntryId",
+        "declaration": { "line": 11731 },
+        "readFunctions": [
+          { "name": "sidebar ondragover", "line": 13909, "detail": "reads to check if dragging active" },
+          { "name": "sidebar ondragover", "line": 13931, "detail": "reads to compare with target" },
+          { "name": "sidebar ondragover", "line": 13950, "detail": "reads for noop reorder check" },
+          { "name": "sidebar ondrop (main)", "line": 14005, "detail": "reads to check pending mutation" },
+          { "name": "sidebar ondrop (main)", "line": 14011, "detail": "reads to compare with targetId" },
+          { "name": "sidebar ondrop (main)", "line": 14012, "detail": "reads for existence check" },
+          { "name": "sidebar ondrop (main)", "line": 14013, "detail": "reads to assign draggedId" },
+          { "name": "sidebar ondrop (main)", "line": 14105, "detail": "reads for center zone move" },
+          { "name": "category-header ondrop", "line": 13030, "detail": "reads for existence check" },
+          { "name": "category-header ondrop", "line": 13031, "detail": "reads to assign draggedId" }
+        ],
+        "writeFunctions": [
+          { "name": "renderWikiTreeLevel ondragstart", "line": 12910, "detail": "dragWikiEntryId = entry.id" },
+          { "name": "renderWikiTreeLevel ondragend", "line": 12922, "detail": "dragWikiEntryId = null" },
+          { "name": "category-header ondrop", "line": 13041, "detail": "dragWikiEntryId = null (success)" },
+          { "name": "category-header ondrop (catch)", "line": 13058, "detail": "dragWikiEntryId = null" },
+          { "name": "sidebar ondrop (main)", "line": 14244, "detail": "dragWikiEntryId = null (end)" }
+        ],
+        "mutateInPlaceFunctions": []
+      },
+      {
+        "variable": "pendingWikiMutation",
+        "declaration": { "line": 11734 },
+        "note": "BUG: Declared and read at line 14002, but NEVER assigned `= true` anywhere in the closure. The guard `if (pendingWikiMutation) return` is dead code.",
+        "readFunctions": [
+          { "name": "sidebar ondrop (main)", "line": 14002, "detail": "reads to prevent concurrent drops (but never true)" }
+        ],
+        "writeFunctions": [],
+        "mutateInPlaceFunctions": []
+      },
+      {
+        "variable": "wikiEntriesCache[projectId]",
+        "declaration": { "line": 3384, "scope": "outer IIFE" },
+        "readFunctions": [
+          { "name": "loadWikiCache", "line": 7518, "detail": "reads cache to return cached entries" },
+          { "name": "scanWikiRefs", "line": 7533, "detail": "reads cache for wiki entry refs scan" },
+          { "name": "editor renderWikiDetailView", "line": 8590, "detail": "reads cache for parent entry lookup" }
+        ],
+        "writeFunctions": [
+          { "name": "loadAll", "line": 11967, "detail": "wikiEntriesCache[projectId] = ents" },
+          { "name": "clearWikiCache", "line": 7529, "detail": "delete wikiEntriesCache[projectId]" },
+          { "name": "loadWikiCache", "line": 7520, "detail": "wikiEntriesCache[projectId] = fetched data" },
+          { "name": "sidebar ondrop main (center zone)", "line": 14160, "detail": "wikiEntriesCache[projectId] = result" }
+        ],
+        "mutateInPlaceFunctions": []
+      }
+    ],
+    "keyObservations": [
+      "entries is the most-touched variable — 11 read sites, 3 write sites, 5 mutate-in-place (all DnD)",
+      "formMetadata is the most complex object — 12+ write sites, many from TipTap editor callbacks",
+      "pendingWikiMutation is declared but NEVER set to true — dead guard code at line 14002",
+      "currentDragZone is written but never read — likely dead code",
+      "formParentId (singular) is written but never read — superseded by formParentIds (plural array)"
+    ]
+  },
+  "dependencyMatrix": {
+    "summary": "Matrix of dependencies between the four Wiki Core sections. Minimum atomic unit for refactoring: {renderForm + wikiTiptapEditors}.",
+    "sections": ["sidebar", "renderForm", "renderDetailView", "wikiTiptapEditors"],
+    "matrix": {
+      "sidebar->renderForm": "Loose",
+      "sidebar->renderDetailView": "None",
+      "sidebar->wikiTiptapEditors": "Loose",
+      "renderForm->sidebar": "Loose",
+      "renderForm->renderDetailView": "None",
+      "renderForm->wikiTiptapEditors": "Tight",
+      "renderDetailView->sidebar": "None",
+      "renderDetailView->renderForm": "Loose",
+      "renderDetailView->wikiTiptapEditors": "None",
+      "wikiTiptapEditors->sidebar": "None",
+      "wikiTiptapEditors->renderForm": "Tight",
+      "wikiTiptapEditors->renderDetailView": "None"
+    },
+    "tightDependencies": [
+      {
+        "pair": "renderForm ↔ wikiTiptapEditors",
+        "direction": "bidirectional",
+        "reasons": [
+          "handleSave() iterates wikiTiptapEditors array (lines 12296-12315) to call editor.getHTML()",
+          "saveTemplate() iterates wikiTiptapEditors array (lines 12649-12663)",
+          "onCategoryChange() calls cleanupWikiEditors() (line 12439)",
+          "resetForm() calls cleanupWikiEditors() (line 12108)",
+          "addCustomSubcategory() calls cleanupWikiEditors() then render() (line 12502)",
+          "renameCustomSubcategory() calls cleanupWikiEditors() (line 12570)",
+          "removeCustomSubcategory() iterates wikiTiptapEditors to destroy specific editor (lines 12590-12595)",
+          "initNotepadEditor() writes formMetadata.private_notepad and sets wikiFormDirty (lines 12790-12791)",
+          "initWikiSubcategoryEditor() calls scheduleTokenFetch() (line 12757)",
+          "setSubcategoryContent() writes to formMetadata.subcategories (lines 11754, 11756)",
+          "Editor orchestration in render() (lines 14361-14460) reads formCategory, customSubcats, formMetadata.subcategories",
+          "form DOM (#wiki-subcat-*, #wiki-private-notepad) must exist before editor init — execution-order dependency"
+        ]
+      }
+    ],
+    "extractionCandidates": {
+      "sidebar": "Loose coupling to renderForm (reads entries for tree, DnD calls render()). Candidate for independent extraction.",
+      "renderDetailView": "Cleanest section — no tight dependencies. window.renderWikiDetailView() already exported at line 13675.",
+      "renderForm+wikiTiptapEditors": "Minimum atomic unit. Cannot be extracted independently."
+    }
+  },
+  "sideEffects": {
+    "summary": "Inventory of all side-effects in the Wiki Core code, categorized by section, with assessment of whether they can be moved to init or replaced by delegation.",
+    "effects": [
+      {
+        "sideEffect": "Inline onclick handler on each .wiki-entry-item",
+        "location": "renderWikiTreeLevel, line 12929",
+        "section": "sidebar",
+        "essential": true,
+        "alternative": "Use event delegation on .wiki-sidebar — single click handler checks e.target.closest('.wiki-entry-item') and reads data-entry-id",
+        "canMoveToInit": false,
+        "canReplaceByDelegation": true
+      },
+      {
+        "sideEffect": "Inline ondragstart handler on each .wiki-entry-item",
+        "location": "renderWikiTreeLevel, lines 12908-12918",
+        "section": "sidebar",
+        "essential": true,
+        "alternative": "Delegate to .wiki-sidebar — single dragstart handler reads data-entry-id",
+        "canMoveToInit": false,
+        "canReplaceByDelegation": true
+      },
+      {
+        "sideEffect": "Inline ondragend handler on each .wiki-entry-item",
+        "location": "renderWikiTreeLevel, lines 12920-12928",
+        "section": "sidebar",
+        "essential": true,
+        "alternative": "Delegate to .wiki-sidebar — single dragend handler clears indicators",
+        "canMoveToInit": false,
+        "canReplaceByDelegation": true
+      },
+      {
+        "sideEffect": "Inline onclick handler on .wiki-category-header (collapse toggle)",
+        "location": "renderSidebarContent, lines 13013-13016",
+        "section": "sidebar",
+        "essential": true,
+        "alternative": "Delegate to .wiki-sidebar — detect click on .wiki-category-header via closest()",
+        "canMoveToInit": false,
+        "canReplaceByDelegation": true
+      },
+      {
+        "sideEffect": "Inline ondragover/ondragleave/ondrop handlers on .wiki-category-header",
+        "location": "renderSidebarContent, lines 13017-13061",
+        "section": "sidebar",
+        "essential": true,
+        "alternative": "Delegate to .wiki-sidebar — extend existing ondragover to handle category-header too",
+        "canMoveToInit": false,
+        "canReplaceByDelegation": true
+      },
+      {
+        "sideEffect": "Sidebar div ondragover handler (zone detection, indicator management)",
+        "location": "render(), lines 13903-13988",
+        "section": "sidebar",
+        "essential": true,
+        "alternative": "ALREADY using event delegation. Could be attached once at init instead of recreated on every render().",
+        "canMoveToInit": true,
+        "canReplaceByDelegation": false
+      },
+      {
+        "sideEffect": "Sidebar div ondrop handler (full DnD move/merge logic)",
+        "location": "render(), lines 13999-14251",
+        "section": "sidebar",
+        "essential": true,
+        "alternative": "ALREADY using event delegation. Contains optimistic UI + API calls. Could be attached once at init.",
+        "canMoveToInit": true,
+        "canReplaceByDelegation": false
+      },
+      {
+        "sideEffect": "TipTap editor destroy/create cycle (cleanup + re-init on every form render)",
+        "location": "render(), lines 14361-14460; cleanupWikiEditors() at line 11737",
+        "section": "form",
+        "essential": true,
+        "alternative": "With full DOM replacement: essential. With partial updates: existing dedup guards (lines 12729, 12772) prevent double-init. Skip cleanupWikiEditors() if DOM nodes preserved. Staggered retries (50/250/700/1500ms + 300ms) work around race conditions.",
+        "canMoveToInit": true,
+        "canReplaceByDelegation": false
+      },
+      {
+        "sideEffect": "onCategoryChange() triggers full render()",
+        "location": "onCategoryChange, lines 12434-12457",
+        "section": "form",
+        "essential": false,
+        "alternative": "Only form section needs re-rendering. Sidebar is unchanged. Could render form HTML to fragment and swap into .wiki-main.",
+        "canMoveToInit": false,
+        "canReplaceByDelegation": false
+      },
+      {
+        "sideEffect": "addCustomSubcategory() triggers cleanupWikiEditors() + full render()",
+        "location": "addCustomSubcategory, lines 12502-12503",
+        "section": "form",
+        "essential": false,
+        "alternative": "Only form section needs re-render.",
+        "canMoveToInit": false,
+        "canReplaceByDelegation": false
+      },
+      {
+        "sideEffect": "renameCustomSubcategory() triggers cleanupWikiEditors() + full render()",
+        "location": "renameCustomSubcategory, lines 12570-12571",
+        "section": "form",
+        "essential": false,
+        "alternative": "Only form section needs re-render.",
+        "canMoveToInit": false,
+        "canReplaceByDelegation": false
+      },
+      {
+        "sideEffect": "removeCustomSubcategory() triggers cleanupWikiEditors() + full render()",
+        "location": "removeCustomSubcategory, lines 12599-12600",
+        "section": "form",
+        "essential": false,
+        "alternative": "Only form section needs re-render.",
+        "canMoveToInit": false,
+        "canReplaceByDelegation": false
+      },
+      {
+        "sideEffect": "saveTemplate() triggers cleanupWikiEditors() + full render()",
+        "location": "saveTemplate, lines 12694-12695",
+        "section": "form",
+        "essential": false,
+        "alternative": "Only form section needs re-render (template changes affect subcategory structure).",
+        "canMoveToInit": false,
+        "canReplaceByDelegation": false
+      },
+      {
+        "sideEffect": "resetTemplate() triggers cleanupWikiEditors() + full render()",
+        "location": "resetTemplate, lines 12722-12723",
+        "section": "form",
+        "essential": false,
+        "alternative": "Only form section needs re-render.",
+        "canMoveToInit": false,
+        "canReplaceByDelegation": false
+      },
+      {
+        "sideEffect": "Async fetchTokenCount() via scheduleTokenFetch() on live token count",
+        "location": "scheduleTokenFetch, lines 12019-12043",
+        "section": "form",
+        "essential": false,
+        "alternative": "Already debounced at 500ms. Display-only side-effect. Could be throttled to only fire when form is visible.",
+        "canMoveToInit": false,
+        "canReplaceByDelegation": false
+      },
+      {
+        "sideEffect": "Post-render async token fetch for detail view (wiki-detail-counts)",
+        "location": "render(), lines 14317-14346",
+        "section": "detailView",
+        "essential": false,
+        "alternative": "Display-only. Could be deferred or lazy-loaded.",
+        "canMoveToInit": false,
+        "canReplaceByDelegation": false
+      },
+      {
+        "sideEffect": "Post-render DOM value assignment (formName, formContent, formCategory, snippet)",
+        "location": "render(), lines 14348-14359",
+        "section": "form",
+        "essential": false,
+        "alternative": "Mostly REDUNDANT. Values already set in template (value: formName at line 13301, textContent at line 13461). Only formParentId reset (line 14356) serves a purpose. 3 of 4 can be removed.",
+        "canMoveToInit": false,
+        "canReplaceByDelegation": false
+      },
+      {
+        "sideEffect": "Inline onclick handlers on parent chip remove buttons and custom subcat rename/delete buttons",
+        "location": "renderForm(), lines 13415-13421, 13494-13503",
+        "section": "form",
+        "essential": true,
+        "alternative": "Could use event delegation on .wiki-form container with robust data-attribute matching.",
+        "canMoveToInit": false,
+        "canReplaceByDelegation": true
+      }
+    ],
+    "pureFunctions": [
+      { "name": "computeWikiEntryCounts", "line": 11979, "verdict": "Pure — reads entry object, counts words/tokens, returns {wc, tc}. No mutation." },
+      { "name": "computeWikiFormCounts", "line": 12000, "verdict": "Pure — reads component-level vars, returns {wc, tc}. No mutation." },
+      { "name": "buildWikiTree", "line": 12799, "verdict": "Pure — creates local childrenMap + topLevel. No caching or external mutation." },
+      { "name": "scanWikiRefs", "line": 7532, "verdict": "Pure — reads wikiEntriesCache (read-only), sorts a copy. Called only from chapter editor, NOT from wiki page." }
+    ]
+  },
+  "riskAssessment": {
+    "strategies": {
+      "strategyA": {
+        "name": "Extract all four sections together as single independent module",
+        "feasibility": "Low",
+        "performanceGain": "High (~200-500ms per loadAll call if full API calls avoided)",
+        "linesOfCodeChanged": "~600-800 lines",
+        "regressionRisk": "High",
+        "crossDependencies": [
+          "All 25+ closure variables must be refactored into a shared store — any desync breaks UI",
+          "All event handlers referencing closure state must be rewired",
+          "loadAll() and all callers must be updated",
+          "Sidebar DnD handlers reference entries, dragWikiEntryId, pendingWikiMutation — must be store-aware",
+          "window.renderWikiDetailView and window.renderWikiLanding already partially extracted — must unify"
+        ],
+        "testEffort": "heavy",
+        "risks": [
+          "TipTap editor lifecycle (destroy at cleanupWikiEditors, create at initWikiSubcategoryEditor) deeply interleaved with form DOM",
+          "DnD center-zone handler already does optimistic sidebar-only updates — contradicts 'unified render' approach",
+          "render() at 250+ lines orchestrates ALL sections — atomic extraction has no intermediate verification points",
+          "Staggered editor retries (50/250/700/1500ms + safety nets) would need careful re-timing against store initialization"
+        ]
+      },
+      "strategyB": {
+        "name": "Extract only the sidebar behind a flag",
+        "feasibility": "Medium-High",
+        "performanceGain": "Medium (~50-150ms per DnD operation by avoiding full render + TipTap re-init)",
+        "linesOfCodeChanged": "~200-300 lines",
+        "regressionRisk": "Medium",
+        "crossDependencies": [
+          "Must extract entries store (or pass as parameter)",
+          "computeWikiEntryCounts() must be extractable from closure (already pure)",
+          "buildWikiTree() must be extractable (already pure)",
+          "DnD handlers on wiki-sidebar div (lines 13903-14251) must be re-attachable without full render()",
+          "Category header DnD (lines 13017-13061) calls render() — needs retargeting to sidebar-only update"
+        ],
+        "testEffort": "moderate",
+        "risks": [
+          "Sidebar DnD handlers reference entries, dragWikiEntryId, projectId — must pass explicitly or via store",
+          "Category header ondrop calls render() — must be changed to sidebar-only update",
+          "renderSidebarContent() is already self-contained (reads entries, calls pure helpers) — low risk",
+          "Center-zone DnD (lines 14101-14185) already demonstrates sidebar-only re-render pattern — can use as template"
+        ]
+      },
+      "strategyC": {
+        "name": "Extract renderDetailView (already partially done)",
+        "feasibility": "High",
+        "performanceGain": "Low-Medium (~20-50ms per detail view render by avoiding full render())",
+        "linesOfCodeChanged": "~50-100 lines",
+        "regressionRisk": "Low",
+        "crossDependencies": [
+          "Depends on entries array (passed as parameter — fine)",
+          "Depends on collapsedSubcategories (passed as parameter — fine)",
+          "Depends on computeWikiEntryCounts() (closure function — should be extracted to shared utility)"
+        ],
+        "testEffort": "light",
+        "risks": [
+          "window.renderWikiDetailView (line 13675) is string-based parallel implementation of DOM-based renderDetailView (line 13078) — dual maintenance burden",
+          "Event delegation for collapse/expand/parent navigation/edit buttons patched after innerHTML insertion — could be cleaner",
+          "Flag window.usePartialUpdates defaults to false (line 11951) — nothing uses extracted version in production"
+        ]
+      },
+      "strategyD": {
+        "name": "Extract collapsed chat container (already done)",
+        "feasibility": "Done",
+        "performanceGain": "Negligible",
+        "linesOfCodeChanged": "0",
+        "regressionRisk": "None",
+        "crossDependencies": [],
+        "testEffort": "none",
+        "risks": []
+      }
+    }
+  },
+  "verdict": "Go – extract only sidebar",
+  "recommendedStrategy": "Strategy B",
+  "rationale": [
+    "Strategy A (extract all four) is too risky — the TipTap editor lifecycle and 25 shared variables create too many interdependencies for atomic extraction",
+    "Strategy B (sidebar only) has the best risk/reward ratio — renderSidebarContent() is already self-contained, center-zone DnD already proves the pattern works (lines 14101-14185), and sidebar re-renders are the most frequent operation (every DnD, every category toggle)",
+    "Strategy C (detail view) is already partially done but provides minimal isolated gain — detail view doesn't change frequently",
+    "Strategy B can be done incrementally across 5 commits without a big-bang merge",
+    "The sidebar is the 'read-mostly' section — it reads entries for display but rarely modifies them directly (only DnD ordering). This makes it the safest candidate for independent extraction"
+  ],
+  "preconditions": [
+    "Extract computeWikiEntryCounts() from closure to shared utility (pure, zero side-effects, can be window-scoped or module-scoped)",
+    "Extract buildWikiTree() from closure to shared utility (already pure, no side-effects)",
+    "Create wikiSidebarStore = { entries, projectId, dragWikiEntryId, categories } — a minimal store object the sidebar module reads from, populated by loadAll()",
+    "Ensure window.usePartialUpdates flag is togglable and defaults to false for safe rollout"
+  ],
+  "commitBoundaries": [
+    {
+      "commit": 1,
+      "name": "Extract pure helpers",
+      "description": "Extract computeWikiEntryCounts, buildWikiTree to shared window scope — 0 behavioral change",
+      "filesChanged": ["static/index.html"],
+      "risk": "None (pure functions, no side-effects)"
+    },
+    {
+      "commit": 2,
+      "name": "Create window.renderWikiSidebar()",
+      "description": "Create HTML-string parallel to renderSidebarContent() — mirror of how renderWikiDetailView relates to renderDetailView",
+      "filesChanged": ["static/index.html"],
+      "risk": "Low (parallel implementation, original unchanged)"
+    },
+    {
+      "commit": 3,
+      "name": "Wire sidebar into render() under flag",
+      "description": "Attach event handlers via delegation (not inline per element) under window.usePartialUpdates flag",
+      "filesChanged": ["static/index.html"],
+      "risk": "Medium (event delegation changes interaction patterns)"
+    },
+    {
+      "commit": 4,
+      "name": "Convert center-zone DnD to sidebar-only update",
+      "description": "Already partially done at lines 14143-14168 — make consistent",
+      "filesChanged": ["static/index.html"],
+      "risk": "Medium (optimistic UI must match server state)"
+    },
+    {
+      "commit": 5,
+      "name": "Convert category-header drops to sidebar-only update",
+      "description": "Replace full render() + loadAll() with sidebar-only update for category moves",
+      "filesChanged": ["static/index.html"],
+      "risk": "Medium (category change cascades to form state)"
+    }
+  ],
+  "rollbackStrategy": "Keep window.usePartialUpdates = false as default. The original DOM-based render() function and renderSidebarContent() remain unchanged. Toggle to true for testing. If sidebar extraction causes regressions, flip back to false. The sidebar module is loaded as an alternative render path, not a replacement.",
+  "painPoints": {
+    "mostCoupledFunction": "render() at line 13847 (~250 lines) — renders topbar, sidebar, form OR detail view, fires token fetch, sets post-render DOM values, initializes TipTap editors with staggered retries",
+    "centerZoneDnDIsolatable": true,
+    "centerZoneDnDReason": "Lines 14101-14185 already demonstrate the correct pattern: optimistic splice, sidebar.innerHTML replacement, API call, server reconciliation. Left/right zone fallback (lines 14188-14242) should be migrated to same pattern.",
+    "simplestFirstStep": "Extract computeWikiEntryCounts() to window scope (line 11979) — 0 behavioral change, instantly makes window.renderWikiDetailView() self-sufficient, takes 10 minutes, cannot break",
+    "mostDangerousPart": "TipTap editor lifecycle (cleanupWikiEditors → initWikiSubcategoryEditor → initNotepadEditor) with staggered retry cascade (50/250/700/1500ms + 100/300ms safety nets). If sidebar extraction accidentally triggers form re-render, editors are destroyed/re-created, losing cursor position, undo history, potentially leaking orphaned instances. 6 functions reference wikiTiptapEditors array — any refactor must preserve lifecycle consistency."
+  },
+  "answers": {
+    "q1_howManyFunctionsReadWriteEntries": "11 functions read entries, 3 functions write entries (reassign), 5 functions mutate entries in-place (all drag-and-drop operations). Total distinct functions touching entries: ~14.",
+    "q2_mostCoupledFunction": "render() at line 13847 (~250 lines) — orchestrates all four sections, inline handlers, post-render DOM setup, async token fetch, and TipTap editor initialization with staggered retries.",
+    "q3_centerZoneDnDIsolatable": "YES. The center-zone handler (lines 14101-14185) already demonstrates the correct optimistic sidebar-only update pattern. It splices entries in-place, replaces sidebar.innerHTML, and reconciles with server response. The left/right zone fallback (lines 14188-14242) still calls full loadAll() and should be migrated.",
+    "q4_simplestFirstStep": "Extract computeWikiEntryCounts() from closure to window scope. Pure function, zero side-effects, immediately makes window.renderWikiDetailView() self-sufficient, takes ~10 minutes, zero risk.",
+    "q5_estimatedTotalPerformanceGain": "If all four sections extracted successfully: ~200-500ms saved per loadAll() call by avoiding full API re-fetches and full DOM rebuild. If sidebar-only extracted: ~50-150ms saved per DnD operation by avoiding TipTap destroy/create cycle and full render().",
+    "q6_mostDangerousPart": "The TipTap editor lifecycle. The staggered retry cascade (50/250/700/1500ms + safety nets) creates a fragile timing dependency between DOM rendering and editor initialization. 6 functions read/write wikiTiptapEditors. Any code path that accidentally triggers cleanupWikiEditors() in the wrong order can orphan editor instances, lose cursor position, corrupt undo history, or cause memory leaks. The fact that pendingWikiMutation guard is broken (never set to true) exacerbates this — concurrent DnD operations and form state changes have no protection."
+  }
+}

@@ -1,5 +1,7 @@
 import json
+import logging
 import os
+import asyncio
 import traceback
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends, WebSocket, WebSocketDisconnect
@@ -20,6 +22,8 @@ from app.auth import get_current_user, decode_jwt
 from app.config import get_settings
 from app.ws_manager import chat_manager, admin_manager
 from app.models import TokenizeRequest, TokenizeResponse
+
+logger = logging.getLogger(__name__)
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -280,6 +284,8 @@ async def ws_admin(websocket: WebSocket):
         if user_id is not None:
             print(f"[WS:admin] Admin user {user_id} disconnected (finally)")
             admin_manager.disconnect(user_id, websocket)
+
+
 
 
 # ---------------------------------------------------------------------------
